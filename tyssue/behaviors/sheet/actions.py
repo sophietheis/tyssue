@@ -29,6 +29,7 @@ def merge_vertices(sheet):
     sheet : a :class:`Sheet` object
 
     """
+    remove_edge = []
     d_min = sheet.settings.get("threshold_length", 1e-3)
     short = sheet.edge_df[sheet.edge_df["length"] < d_min].index.to_numpy()
     np.random.shuffle(short)
@@ -36,10 +37,11 @@ def merge_vertices(sheet):
         return -1
     logger.info(f"Collapsing {short.shape[0]} edges")
     while short.shape[0]:
+        remove_edge.append(short[0])
         collapse_edge(sheet, short[0], allow_two_sided=False)
         short = sheet.edge_df[sheet.edge_df["length"] < d_min].index.to_numpy()
         np.random.shuffle(short)
-    return 0
+    return remove_edge
 
 
 def detach_vertices(sheet):
@@ -55,6 +57,7 @@ def detach_vertices(sheet):
 
     """
     # sheet.update_rank()
+    new_edges = []
     st_connect = connectivity.srce_trgt_connectivity(sheet)
     rank = ((st_connect + st_connect.T) > 0).sum(axis=0)
     if isinstance(sheet, Sheet):
@@ -65,7 +68,7 @@ def detach_vertices(sheet):
         split_vert = bulk_split
 
     if rank.max() == min_rank:
-        return 0
+        return 0, None
 
     dt = sheet.settings.get("dt", 1.0)
     p_4 = sheet.settings.get("p_4", 0.1) * dt
@@ -81,7 +84,8 @@ def detach_vertices(sheet):
     if to_detach.size:
         logger.info(f"Detaching {to_detach.size} vertices")
         for vert in to_detach:
-            split_vert(sheet, vert)
+            new_edges.append(split_vert(sheet, vert))
+    return None, new_edges
 
 
 def set_value(sheet, element, index, set_value, col):

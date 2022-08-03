@@ -47,12 +47,18 @@ def reconnect(sheet, manager, **kwargs):
     """
     sheet.settings.update(kwargs)
     nv = sheet.Nv
-    merge_vertices(sheet)
+    if hasattr(manager, "trackevent"):
+         manager.trackevent["remove_edge"] = merge_vertices(sheet)
+    else:
+        merge_vertices(sheet)
     if nv != sheet.Nv:
         logger.info(f"Merged {nv - sheet.Nv+1} vertices")
     nv = sheet.Nv
-    retval = detach_vertices(sheet)
-    if retval:
+    if hasattr(manager, "trackevent"):
+        retval, manager.trackevent["add_edge"] = detach_vertices(sheet)
+    else:
+        retval, _ = detach_vertices(sheet)
+    if retval is not None:
         logger.info("Failed to detach, skipping")
 
     if nv != sheet.Nv:

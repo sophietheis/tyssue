@@ -21,7 +21,7 @@ class EventManager:
 
     """
 
-    def __init__(self, element=None, logfile=None):
+    def __init__(self, element=None, logfile=None, track_event=False):
         """Creates an events class
 
         Parameters
@@ -37,6 +37,8 @@ class EventManager:
         self.element = element
         self.current.append((wait, {"face_id": -1, "n_steps": 1}))
         self.clock = 0
+        if track_event:
+            self.trackevent={}
         if logfile is not None:
             logger.setLevel(logging.DEBUG)
             fh = logging.FileHandler(logfile)
