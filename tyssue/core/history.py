@@ -278,6 +278,7 @@ class HistoryHdf5(History):
         save_only=None,
         hf5file="",
         overwrite=False,
+        track_event=False
     ):
         """Creates a `HistoryHdf5` instance.
 
@@ -328,6 +329,10 @@ class HistoryHdf5(History):
                             )
                         )
                         break
+        if track_event:
+            self.trackfile = self.hf5file.parent / self.hf5file.name.replace(
+                                    self.hf5file.suffix,f".txt")
+            self.trackevent = {}
         if sheet is None:
             last = self.time_stamps[-1]
             with pd.HDFStore(self.hf5file, "r") as file:
@@ -372,7 +377,7 @@ class HistoryHdf5(History):
             times = file.select(element, columns=["time"])["time"].unique()
         return times
 
-    def record(self, time_stamp=None, sheet=None):
+    def record(self, time_stamp=None, sheet=None, trackevent=None):
         """Appends a copy of the sheet datasets to the history HDF file.
 
         Parameters
@@ -436,7 +441,11 @@ class HistoryHdf5(History):
                     ):
                         store.remove(key=element, where=f"time == {self.time}")
                     store.append(key=element, value=df, **kwargs)
-
+        if trackevent is not None:
+            self.trackevent[time_stamp] = trackevent.copy()
+            with open(self.trackfile, 'w') as f:
+                for k, v in self.trackevent.items():
+                    f.write(str(k) + ' >>> ' + str(v) + '\n\n')
         self.index += 1
 
     def retrieve(self, time):

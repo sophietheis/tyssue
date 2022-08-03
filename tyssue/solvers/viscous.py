@@ -95,8 +95,8 @@ class EulerSolver:
         """Updates the eptm vertices position"""
         return self._set_pos(self.eptm, self.geom, pos)
 
-    def record(self, t):
-        self.history.record(time_stamp=t)
+    def record(self, t, trackevent=None):
+        self.history.record(time_stamp=t, trackevent=trackevent)
 
     def solve(self, tf, dt, on_topo_change=None, topo_change_args=()):
         """Solves the system of differential equations from the current time
@@ -130,7 +130,10 @@ class EulerSolver:
                 if on_topo_change is not None:
                     on_topo_change(*topo_change_args)
                 self.eptm.topo_changed = False
-            self.record(t)
+            if hasattr(self.manager, "trackevent"):
+                self.record(t, self.manager.trackevent)
+            else:
+                self.record(t)
 
     def ode_func(self, t, pos):
         """Computes the models' gradient.
