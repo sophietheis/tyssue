@@ -4,6 +4,8 @@ import traceback
 import warnings
 from collections import defaultdict
 from pathlib import Path
+import json
+from numpyencoder import NumpyEncoder
 
 import numpy as np
 import pandas as pd
@@ -331,7 +333,7 @@ class HistoryHdf5(History):
                         break
         if track_event:
             self.trackfile = self.hf5file.parent / self.hf5file.name.replace(
-                                    self.hf5file.suffix,f".txt")
+                                    self.hf5file.suffix,f".json")
             self.trackevent = {}
         if sheet is None:
             last = self.time_stamps[-1]
@@ -444,8 +446,7 @@ class HistoryHdf5(History):
         if trackevent is not None:
             self.trackevent[time_stamp] = trackevent.copy()
             with open(self.trackfile, 'w') as f:
-                for k, v in self.trackevent.items():
-                    f.write(str(k) + ' >>> ' + str(v) + '\n\n')
+                json.dump(self.trackevent, f, cls=NumpyEncoder)
         self.index += 1
 
     def retrieve(self, time):
