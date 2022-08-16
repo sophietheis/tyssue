@@ -73,7 +73,9 @@ class AbstractEffector:
 
 
 class LengthElasticity(AbstractEffector):
-    """Elastic half edge"""
+    """Elastic half edge elasticity  with the formula
+    1/2*length_elasticity*(length-prefered_length)**2
+    """
 
     dimensions = units.line_elasticity
     label = "Length elasticity"
@@ -116,7 +118,10 @@ class LengthElasticity(AbstractEffector):
 
 
 class PerimeterElasticity(AbstractEffector):
-    """From Mapeng Bi et al. https://doi.org/10.1038/nphys3471"""
+    """
+    Face perimeter elasticity with the formula
+    1/2*perimeter_elasticity*(perimeter-prefered_perimeter)**2
+    From Mapeng Bi et al. https://doi.org/10.1038/nphys3471"""
 
     dimensions = units.line_elasticity
     magnitude = "perimeter_elasticity"
@@ -135,17 +140,20 @@ class PerimeterElasticity(AbstractEffector):
 
     @staticmethod
     def energy(eptm):
-        return eptm.face_df.eval(
-            "0.5 * is_alive"
-            "* perimeter_elasticity"
-            "* (perimeter - prefered_perimeter)** 2"
+        return elastic_energy(
+            eptm.face_df,
+            "perimeter",
+            "perimeter_elasticity * is_alive",
+            "prefered_perimeter",
         )
 
     @staticmethod
     def gradient(eptm):
-
-        gamma_ = eptm.face_df.eval(
-            "perimeter_elasticity * is_alive" "*  (perimeter - prefered_perimeter)"
+        gamma_ = elastic_force(
+            eptm.face_df,
+            "perimeter",
+            "perimeter_elasticity * is_alive",
+            "prefered_perimeter",
         )
         gamma = eptm.upcast_face(gamma_)
 
@@ -156,6 +164,10 @@ class PerimeterElasticity(AbstractEffector):
 
 
 class FaceAreaElasticity(AbstractEffector):
+    """
+    Face area elasticity with the formula
+    1/2*area_elasticity*(area-prefered_area)**2
+    """
 
     dimensionless = False
     dimensions = units.area_elasticity
@@ -206,33 +218,46 @@ class FaceAreaElasticity(AbstractEffector):
 
 
 class FaceVolumeElasticity(AbstractEffector):
+    """
+    Face volume elasticity with the formula
+    1/2*volume_elasticity*(volume-prefered_volume)**2
+
+    Effector for 2.5D model, where a volume of a cell is taking into account where only apical surface is modeled
+    """
 
     dimensions = units.vol_elasticity
-    magnitude = "vol_elasticity"
+    magnitude = "volume_elasticity"
     label = "Volume elasticity"
     element = "face"
     specs = {
-        "face": {"is_alive": 1, "vol": 1.0, "vol_elasticity": 1.0, "prefered_vol": 1.0},
+        "face": {
+            "is_alive": 1,
+            "vol": 1.0,
+            "volume_elasticity": 1.0,
+            "prefered_volume": 1.0,
+        },
         "vert": {"height": 1.0},
         "edge": {"sub_area": 1 / 6},
     }
 
-    spatial_ref = "prefered_vol", units.vol
+    spatial_ref = "prefered_volume", units.vol
 
     @staticmethod
     def get_nrj_norm(specs):
-        return specs["face"]["vol_elasticity"] * specs["face"]["prefered_vol"] ** 2
+        return (
+            specs["face"]["volume_elasticity"] * specs["face"]["prefered_volume"] ** 2
+        )
 
     @staticmethod
     def energy(eptm):
         return elastic_energy(
-            eptm.face_df, "vol", "vol_elasticity * is_alive", "prefered_vol"
+            eptm.face_df, "vol", "volume_elasticity * is_alive", "prefered_volume"
         )
 
     @staticmethod
     def gradient(eptm):
         kv_v0_ = elastic_force(
-            eptm.face_df, "vol", "vol_elasticity * is_alive", "prefered_vol"
+            eptm.face_df, "vol", "volume_elasticity * is_alive", "prefered_volume"
         )
 
         kv_v0 = to_nd(eptm.upcast_face(kv_v0_), 3)
@@ -253,6 +278,10 @@ class FaceVolumeElasticity(AbstractEffector):
 
 
 class CellAreaElasticity(AbstractEffector):
+    """
+    Cell area elasticity with the formula
+    1/2*area_elasticity*(area-prefered_area)**2
+    """
 
     dimensions = units.area_elasticity
     magnitude = "area_elasticity"
@@ -295,6 +324,10 @@ class CellAreaElasticity(AbstractEffector):
 
 
 class CellVolumeElasticity(AbstractEffector):
+    """
+    Cell volume elasticity with the formula
+    1/2*volumne_elasticity*(volume-prefered_volume)**2
+    """
 
     dimensions = units.vol_elasticity
     magnitude = "vol_elasticity"
@@ -333,7 +366,9 @@ class CellVolumeElasticity(AbstractEffector):
 
 class LumenVolumeElasticity(AbstractEffector):
     """
-    Global volume elasticity of the object.
+    Global volume elasticity of the object. with the formula
+    1/2*lumen_elasticity*(lumen-prefered_lumen)**2
+
     For example the volume of the yolk in the Drosophila embryo
     """
 
@@ -382,6 +417,10 @@ class LumenVolumeElasticity(AbstractEffector):
 
 
 class LineTension(AbstractEffector):
+    """
+    Half edge line tension with the formula
+    line_tension*length/2
+    """
 
     dimensions = units.line_tension
     magnitude = "line_tension"
@@ -408,6 +447,10 @@ class LineTension(AbstractEffector):
 
 
 class FaceContractility(AbstractEffector):
+    """
+    Face contractility with the formula
+    1/2*contractility*perimeter**2
+    """
 
     dimensions = units.line_elasticity
     magnitude = "contractility"
@@ -434,6 +477,10 @@ class FaceContractility(AbstractEffector):
 
 
 class SurfaceTension(AbstractEffector):
+    """
+    Face surface tension with the formula
+    surface_tension*area
+    """
 
     dimensions = units.area_tension
     magnitude = "surface_tension"
@@ -446,7 +493,6 @@ class SurfaceTension(AbstractEffector):
 
     @staticmethod
     def energy(eptm):
-
         return eptm.face_df.eval("surface_tension * area")
 
     @staticmethod
@@ -464,6 +510,9 @@ class SurfaceTension(AbstractEffector):
 
 
 class LineViscosity(AbstractEffector):
+    """
+    Edge line viscosity
+    """
 
     dimensions = units.line_viscosity
     magnitude = "edge_viscosity"
@@ -484,6 +533,11 @@ class LineViscosity(AbstractEffector):
 
 
 class BorderElasticity(AbstractEffector):
+    """
+    Edge border elasticity with the formula
+    border_elasticity*prefered_length**2
+    """
+
     dimensions = units.line_elasticity
     label = "Border edges elasticity"
     magnitude = "border_elasticity"
@@ -531,7 +585,7 @@ class BorderElasticity(AbstractEffector):
 
 class LumenAreaElasticity(AbstractEffector):
     """
-
+    Lumen area elasticity for 2D simulation with the formula
     ..math: \frac{K_Y}{2}(A_{\mathrm{lumen}} - A_{0,\mathrm{lumen}})^2
 
     """
@@ -568,7 +622,8 @@ class LumenAreaElasticity(AbstractEffector):
 
 class RadialTension(AbstractEffector):
     """
-    Apply a tension perpendicular to a face.
+    Apply a tension perpendicular to a face divide equally on each vertex
+    ..math: height*radialTension
     """
 
     dimensions = units.line_tension
@@ -595,7 +650,8 @@ class RadialTension(AbstractEffector):
 
 class BarrierElasticity(AbstractEffector):
     """
-    Barrier use to maintain the tissue integrity.
+    Barrier use to maintain the tissue integrity, for 2.5D geometry
+    ..math: \frac{1}{2} K_barrier \detha_\rho^2
     """
 
     dimensions = units.line_elasticity
