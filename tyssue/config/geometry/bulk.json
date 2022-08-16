@@ -30,7 +30,7 @@
     "dx": 0.0,
     "nx": 0.0,
     "length": 0.0,
-    "sub_vol": 0.0,
+    "sub_volume": 0.0,
     "sub_area": 0.0,
     "srce": 0,
     "face": 0,

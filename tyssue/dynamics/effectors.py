@@ -227,7 +227,7 @@ class FaceVolumeElasticity(AbstractEffector):
 
     dimensions = units.volume_elasticity
     magnitude = "volume_elasticity"
-    label = "Volume elasticity"
+    label = "Face Volume elasticity"
     element = "face"
     specs = {
         "face": {
@@ -331,7 +331,7 @@ class CellVolumeElasticity(AbstractEffector):
 
     dimensions = units.volume_elasticity
     magnitude = "volume_elasticity"
-    label = "Volume elasticity"
+    label = "Cell Volume elasticity"
     element = "cell"
     spatial_ref = "prefered_volume", units.volume
 
@@ -466,7 +466,6 @@ class FaceContractility(AbstractEffector):
 
     @staticmethod
     def gradient(eptm):
-
         gamma_ = eptm.face_df.eval("contractility * perimeter * is_alive")
         gamma = eptm.upcast_face(gamma_)
 
