@@ -20,6 +20,6 @@ area = length**2
 area_tension = energy / area
 area_elasticity = energy / area**2
 
-vol = length**3
-vol_tension = energy / vol
-vol_elasticity = energy / vol**2
+volume = length**3
+volume_tension = energy / volume
+volume_elasticity = energy / volume**2

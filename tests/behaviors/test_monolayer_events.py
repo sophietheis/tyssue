@@ -24,12 +24,12 @@ def test_grow():
 
     geom.center(mono)
     geom.update_all(mono)
-    mono.cell_df["prefered_vol"] = 1.0
+    mono.cell_df["prefered_volume"] = 1.0
     mono.cell_df["prefered_area"] = 1.0
 
     grow(mono, 0, 0.2)
 
-    assert mono.cell_df.loc[0, "prefered_vol"] == 1.2
+    assert mono.cell_df.loc[0, "prefered_volume"] == 1.2
     assert round(mono.cell_df.loc[0, "prefered_area"], 4) == 1.1292
 
 
@@ -42,12 +42,12 @@ def test_shrink():
 
     geom.center(mono)
     geom.update_all(mono)
-    mono.cell_df["prefered_vol"] = 1.0
+    mono.cell_df["prefered_volume"] = 1.0
     mono.cell_df["prefered_area"] = 1.0
 
     shrink(mono, 0, 0.2)
 
-    assert round(mono.cell_df.loc[0, "prefered_vol"], 4) == 0.8333
+    assert round(mono.cell_df.loc[0, "prefered_volume"], 4) == 0.8333
     assert round(mono.cell_df.loc[0, "prefered_area"], 4) == 0.8855
 
 
@@ -172,8 +172,8 @@ def test_constriction():
     dyn_specs = config.dynamics.quasistatic_bulk_spec()
     dyn_specs["cell"]["area_elasticity"] = 0.05
     dyn_specs["cell"]["prefered_area"] = 6.0
-    dyn_specs["cell"]["vol_elasticity"] = 1.0
-    dyn_specs["cell"]["prefered_vol"] = 1.2
+    dyn_specs["cell"]["volume_elasticity"] = 1.0
+    dyn_specs["cell"]["prefered_volume"] = 1.2
     dyn_specs["face"]["contractility"] = 0.0
     dyn_specs["edge"]["line_tension"] = 0.0
     mono.update_specs(dyn_specs, reset=True)

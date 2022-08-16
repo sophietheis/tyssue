@@ -1,7 +1,7 @@
 {
     "cell": {
-	"vol_elasticity": 1.0,
-	"prefered_vol": 1.0,
+	"volume_elasticity": 1.0,
+	"prefered_volume": 1.0,
 	"area_elasticity": 1.0,
 	"prefered_area": 1.0,
 	"is_alive": 1

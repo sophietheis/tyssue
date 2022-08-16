@@ -68,7 +68,7 @@ def apoptosis(monolayer, manager, **kwargs):
             done = False
         elif len(faces_in_cell) == 4:
             # Volume reduction
-            if monolayer.cell_df.loc[cell, "vol"] > apoptosis_spec["critical_volume"]:
+            if monolayer.cell_df.loc[cell, "volume"] > apoptosis_spec["critical_volume"]:
                 shrink(monolayer, cell, apoptosis_spec["shrink_rate"])
                 done = False
             else:

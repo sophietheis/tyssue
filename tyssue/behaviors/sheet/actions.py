@@ -259,7 +259,7 @@ def increase_linear_tension(
                 )
 
 
-def grow(sheet, face, growth_rate, growth_col="prefered_vol"):
+def grow(sheet, face, growth_rate, growth_col="prefered_volume"):
     """Multiplies the grow columns of face by a factor.
 
     Parameters
@@ -273,10 +273,10 @@ def grow(sheet, face, growth_rate, growth_col="prefered_vol"):
 
     :Example:
 
-    >>> print(sheet.face_df[face, 'prefered_vol'])
+    >>> print(sheet.face_df[face, 'prefered_volume'])
     10
-    >>> grow(sheet, face, 1.7, 'prefered_vol')
-    >>> print(sheet.face_df[face, 'prefered_vol'])
+    >>> grow(sheet, face, 1.7, 'prefered_volume')
+    >>> print(sheet.face_df[face, 'prefered_volume'])
     17.0
 
     """
@@ -284,7 +284,7 @@ def grow(sheet, face, growth_rate, growth_col="prefered_vol"):
     increase(sheet, "face", face, growth_rate, growth_col, True)
 
 
-def shrink(sheet, face, shrink_rate, shrink_col="prefered_vol"):
+def shrink(sheet, face, shrink_rate, shrink_col="prefered_volume"):
     """Devides the shrink_col of face by a factor.
 
     Parameters

@@ -137,14 +137,14 @@ def bulk_spec():
     """Geometry specification for bulk tissues."""
     spec = sheet_spec()
 
-    spec["edge"].update({"cx": 0.0, "cy": 0.0, "cz": 0.0, "cell": 0, "sub_vol": 0.0})
+    spec["edge"].update({"cx": 0.0, "cy": 0.0, "cz": 0.0, "cell": 0, "sub_volume": 0.0})
 
     spec["cell"] = {
         "x": 0.0,
         "y": 0.0,
         "z": 0.0,
         "area": 0.0,
-        "vol": 0.0,
+        "volume": 0.0,
         "num_faces": 6,
         "is_alive": 1,
         "id": 0,

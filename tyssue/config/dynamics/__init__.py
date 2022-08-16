@@ -19,10 +19,10 @@ def quasistatic_plane_spec():
         {
         "face": {
             "contractility": 0.04,
-            "vol_elasticity": 1.0,
+            "volume_elasticity": 1.0,
             "prefered_height": 10.0,
             "prefered_area": 24.0,
-            "prefered_vol": 0.0
+            "prefered_volume": 0.0
             },
         "vert": {
              "radial_tension": 0.0
@@ -51,10 +51,10 @@ def quasistatic_sheet_spec():
         {
         "face": {
             "contractility": 0.04,
-            "vol_elasticity": 1.0,
+            "volume_elasticity": 1.0,
             "prefered_height": 10.0,
             "prefered_area": 24.0,
-            "prefered_vol": 0.0
+            "prefered_volume": 0.0
             },
         "vert": {
              "radial_tension": 0.0
@@ -82,10 +82,10 @@ def quasistatic_sheet_spec_anchors():
         {
         "face": {
             "contractility": 0.04,
-            "vol_elasticity": 1.0,
+            "volume_elasticity": 1.0,
             "prefered_height": 10.0,
             "prefered_area": 24.0,
-            "prefered_vol": 0.0
+            "prefered_volume": 0.0
             },
         "vert": {
             "radial_tension": 0.0,

@@ -1,10 +1,10 @@
 {
     "face": {
 	"contractility": 0.04,
-	"vol_elasticity": 1.0,
+	"volume_elasticity": 1.0,
 	"prefered_height": 24.0,
 	"prefered_area": 12.0,
-	"prefered_vol": 288.0
+	"prefered_volume": 288.0
     },
     "vert": {
 	"radial_tension": 0.0,

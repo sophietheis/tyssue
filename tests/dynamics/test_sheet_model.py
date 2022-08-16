@@ -37,10 +37,10 @@ def test_adim():
     default_mod_specs = {
         "face": {
             "contractility": 0.12,
-            "vol_elasticity": 1.0,
+            "volume_elasticity": 1.0,
             "prefered_height": 10.0,
             "prefered_area": 24.0,
-            "prefered_vol": 240.0,
+            "prefered_volume": 240.0,
         },
         "edge": {"line_tension": 0.04},
         "vert": {"radial_tension": 0.0},
@@ -84,7 +84,6 @@ def test_compute_gradient():
     nondim_specs = config.dynamics.quasistatic_sheet_spec()
     dim_model_specs = model.dimensionalize(nondim_specs)
     sheet.update_specs(dim_model_specs)
-
     geom.update_all(sheet)
 
     sheet.edge_df["is_active"] = sheet.upcast_srce("is_active") * sheet.upcast_face(

@@ -23,7 +23,7 @@ def test_bulk_update_vol():
             "z": [-0.5, -0.5, -0.5],
             "is_alive": [True, True, True],
             "num_faces": [8, 8, 8],
-            "vol": [2.598, 2.598, 2.598],
+            "volume": [2.598, 2.598, 2.598],
         }
     ).set_index("cell")
 
@@ -115,7 +115,7 @@ def test_bulk_update_vol():
     tolerance = 1e-16
 
     # check volumes
-    assert all((expected_cell_df["vol"] - eptm.cell_df["vol"]) ** 2 < tolerance)
+    assert all((expected_cell_df["volume"] - eptm.cell_df["volume"]) ** 2 < tolerance)
 
     # check centroids
     assert all(

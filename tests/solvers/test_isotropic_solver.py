@@ -24,7 +24,7 @@ def test_iso_solver():
 
     dyn_specs = config.dynamics.quasistatic_sheet_spec()
     dyn_specs["vert"]["basal_shift"] = 0.0
-    dyn_specs["face"]["prefered_vol"] = 1.0
+    dyn_specs["face"]["prefered_volume"] = 1.0
 
     sheet.update_specs(dyn_specs, reset=True)
     geom.update_all(sheet)

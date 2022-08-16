@@ -65,7 +65,7 @@ default_division_spec = {
     "face_id": -1,
     "face": -1,
     "growth_rate": 0.1,
-    "critical_vol": 2.0,
+    "critical_volume": 2.0,
     "geom": SheetGeometry,
 }
 
@@ -83,7 +83,7 @@ def division(sheet, manager, **kwargs):
       index of the mother face
     growth_rate : float, default 0.1
       rate of increase of the prefered volume
-    critical_vol : float, default 2.
+    critical_volume : float, default 2.
       volume at which the cells stops to grow and devides
 
     """
@@ -92,13 +92,13 @@ def division(sheet, manager, **kwargs):
 
     face = division_spec["face"]
 
-    division_spec["critical_vol"] *= sheet.specs["face"]["prefered_vol"]
+    division_spec["critical_volume"] *= sheet.specs["face"]["prefered_volume"]
 
-    print(sheet.face_df.loc[face, "vol"], division_spec["critical_vol"])
+    print(sheet.face_df.loc[face, "volume"], division_spec["critical_volume"])
 
-    if sheet.face_df.loc[face, "vol"] < division_spec["critical_vol"]:
+    if sheet.face_df.loc[face, "volume"] < division_spec["critical_volume"]:
         increase(
-            sheet, "face", face, division_spec["growth_rate"], "prefered_vol", True
+            sheet, "face", face, division_spec["growth_rate"], "prefered_volume", True
         )
         manager.append(division, **division_spec)
     else:

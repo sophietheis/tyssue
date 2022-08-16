@@ -60,10 +60,10 @@ class SheetGeometry(PlanarGeometry):
         module.
 
         """
-        sheet.edge_df["sub_vol"] = (
+        sheet.edge_df["sub_volume"] = (
             sheet.upcast_srce(sheet.vert_df["height"]) * sheet.edge_df["sub_area"]
         )
-        sheet.face_df["vol"] = sheet.sum_face(sheet.edge_df["sub_vol"])
+        sheet.face_df["volume"] = sheet.sum_face(sheet.edge_df["sub_volume"])
 
     @classmethod
     def update_height(cls, sheet):
@@ -317,7 +317,7 @@ class ClosedSheetGeometry(SheetGeometry):
             np.sum((lumen_pos_faces) * sheet.edge_df[sheet.ncoords].to_numpy(), axis=1)
             / 6
         )
-        sheet.settings["lumen_vol"] = sum(lumen_sub_vol)
+        sheet.settings["lumen_volume"] = sum(lumen_sub_vol)
 
 
 class MidlineBoundaryGeometry(ClosedSheetGeometry):

@@ -45,11 +45,11 @@ class BulkGeometry(SheetGeometry):
         face_pos = eptm.edge_df[["f" + c for c in eptm.coords]].values
         cell_pos = eptm.edge_df[["c" + c for c in eptm.coords]].values
 
-        eptm.edge_df["sub_vol"] = (
+        eptm.edge_df["sub_volume"] = (
             np.sum((face_pos - cell_pos) * eptm.edge_df[eptm.ncoords].values, axis=1)
             / 6
         )
-        eptm.cell_df["vol"] = eptm.sum_cell(eptm.edge_df["sub_vol"])
+        eptm.cell_df["volume"] = eptm.sum_cell(eptm.edge_df["sub_volume"])
 
     @staticmethod
     def update_areas(eptm):
@@ -189,4 +189,4 @@ class ClosedMonolayerGeometry(MonolayerGeometry):
         lumen_sub_vol = (
             np.sum((lumen_pos_faces) * lumen_edges[eptm.ncoords].values, axis=1) / 6
         )
-        eptm.settings["lumen_vol"] = -lumen_sub_vol.sum()
+        eptm.settings["lumen_volume"] = -lumen_sub_vol.sum()

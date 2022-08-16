@@ -152,7 +152,7 @@ def _constrict_apical(faces_in_cell, monolayer, constriction_spec):
             monolayer.face_df.loc[prev_Nf:, "contractility"] = 0
 
     elif len(faces_in_cell) == 4:
-        if monolayer.cell_df.loc[cell, "vol"] > constriction_spec["critical_volume"]:
+        if monolayer.cell_df.loc[cell, "volume"] > constriction_spec["critical_volume"]:
             shrink(monolayer, cell, constriction_spec["shrink_rate"])
 
         if current_traction < constriction_spec["max_traction"]:

@@ -225,14 +225,14 @@ class FaceVolumeElasticity(AbstractEffector):
     Effector for 2.5D model, where a volume of a cell is taking into account where only apical surface is modeled
     """
 
-    dimensions = units.vol_elasticity
+    dimensions = units.volume_elasticity
     magnitude = "volume_elasticity"
     label = "Volume elasticity"
     element = "face"
     specs = {
         "face": {
             "is_alive": 1,
-            "vol": 1.0,
+            "volume": 1.0,
             "volume_elasticity": 1.0,
             "prefered_volume": 1.0,
         },
@@ -240,7 +240,7 @@ class FaceVolumeElasticity(AbstractEffector):
         "edge": {"sub_area": 1 / 6},
     }
 
-    spatial_ref = "prefered_volume", units.vol
+    spatial_ref = "prefered_volume", units.volume
 
     @staticmethod
     def get_nrj_norm(specs):
@@ -251,13 +251,13 @@ class FaceVolumeElasticity(AbstractEffector):
     @staticmethod
     def energy(eptm):
         return elastic_energy(
-            eptm.face_df, "vol", "volume_elasticity * is_alive", "prefered_volume"
+            eptm.face_df, "volume", "volume_elasticity * is_alive", "prefered_volume"
         )
 
     @staticmethod
     def gradient(eptm):
         kv_v0_ = elastic_force(
-            eptm.face_df, "vol", "volume_elasticity * is_alive", "prefered_volume"
+            eptm.face_df, "volume", "volume_elasticity * is_alive", "prefered_volume"
         )
 
         kv_v0 = to_nd(eptm.upcast_face(kv_v0_), 3)
@@ -329,28 +329,28 @@ class CellVolumeElasticity(AbstractEffector):
     1/2*volumne_elasticity*(volume-prefered_volume)**2
     """
 
-    dimensions = units.vol_elasticity
-    magnitude = "vol_elasticity"
+    dimensions = units.volume_elasticity
+    magnitude = "volume_elasticity"
     label = "Volume elasticity"
     element = "cell"
-    spatial_ref = "prefered_vol", units.vol
+    spatial_ref = "prefered_volume", units.volume
 
     specs = {
-        "cell": {"is_alive": 1, "vol": 1.0, "vol_elasticity": 1.0, "prefered_vol": 1.0}
+        "cell": {"is_alive": 1, "volume": 1.0, "volume_elasticity": 1.0, "prefered_volume": 1.0}
     }
 
     @staticmethod
     def get_nrj_norm(specs):
-        return specs["cell"]["vol_elasticity"] * specs["cell"]["prefered_vol"] ** 2
+        return specs["cell"]["volume_elasticity"] * specs["cell"]["prefered_volume"] ** 2
 
     @staticmethod
     def energy(eptm):
-        return elastic_energy(eptm.cell_df, "vol", "vol_elasticity", "prefered_vol")
+        return elastic_energy(eptm.cell_df, "volume", "volume_elasticity", "prefered_volume")
 
     @staticmethod
     def gradient(eptm):
         kv_v0_ = elastic_force(
-            eptm.cell_df, "vol", "vol_elasticity * is_alive", "prefered_vol"
+            eptm.cell_df, "volume", "volume_elasticity * is_alive", "prefered_volume"
         )
 
         kv_v0 = to_nd(eptm.upcast_cell(kv_v0_), 3)
@@ -372,38 +372,38 @@ class LumenVolumeElasticity(AbstractEffector):
     For example the volume of the yolk in the Drosophila embryo
     """
 
-    dimensions = units.vol_elasticity
-    magnitude = "lumen_vol_elasticity"
+    dimensions = units.volume_elasticity
+    magnitude = "lumen_volume_elasticity"
     label = "Lumen volume elasticity"
     element = "settings"
-    spatial_ref = "lumen_prefered_vol", units.vol
+    spatial_ref = "lumen_prefered_volume", units.volume
 
     specs = {
         "settings": {
-            "lumen_vol": 1.0,
-            "lumen_vol_elasticity": 1.0,
-            "lumen_prefered_vol": 1.0,
+            "lumen_volume": 1.0,
+            "lumen_volume_elasticity": 1.0,
+            "lumen_prefered_volume": 1.0,
         }
     }
 
     @staticmethod
     def get_nrj_norm(specs):
         return (
-            specs["settings"]["lumen_vol_elasticity"]
-            * specs["settings"]["lumen_prefered_vol"] ** 2
+            specs["settings"]["lumen_volume_elasticity"]
+            * specs["settings"]["lumen_prefered_volume"] ** 2
         )
 
     @staticmethod
     def energy(eptm):
 
         return _elastic_energy(
-            eptm.settings, "lumen_vol", "lumen_vol_elasticity", "lumen_prefered_vol"
+            eptm.settings, "lumen_volume", "lumen_volume_elasticity", "lumen_prefered_volume"
         )
 
     @staticmethod
     def gradient(eptm):
         kv_v0 = _elastic_force(
-            eptm.settings, "lumen_vol", "lumen_vol_elasticity", "lumen_prefered_vol"
+            eptm.settings, "lumen_volume", "lumen_volume_elasticity", "lumen_prefered_volume"
         )
 
         grad_v_srce, grad_v_trgt = lumen_volume_grad(eptm)
@@ -594,28 +594,28 @@ class LumenAreaElasticity(AbstractEffector):
     label = "Lumen volume constraint"
     magnitude = "lumen_elasticity"
     element = "settings"
-    spatial_ref = "lumen_prefered_vol", units.area
+    spatial_ref = "lumen_prefered_volume", units.area
 
     specs = {
         "settings": {
             "lumen_elasticity": 1.0,
-            "lumen_prefered_vol": 1.0,
-            "lumen_vol": 1.0,
+            "lumen_prefered_volume": 1.0,
+            "lumen_volume": 1.0,
         }
     }
 
     @staticmethod
     def energy(eptm):
         Ky = eptm.settings["lumen_elasticity"]
-        V0 = eptm.settings["lumen_prefered_vol"]
-        Vy = eptm.settings["lumen_vol"]
+        V0 = eptm.settings["lumen_prefered_volume"]
+        Vy = eptm.settings["lumen_volume"]
         return np.array([Ky * (Vy - V0) ** 2 / 2])
 
     @staticmethod
     def gradient(eptm):
         Ky = eptm.settings["lumen_elasticity"]
-        V0 = eptm.settings["lumen_prefered_vol"]
-        Vy = eptm.settings["lumen_vol"]
+        V0 = eptm.settings["lumen_prefered_volume"]
+        Vy = eptm.settings["lumen_volume"]
         grad_srce, grad_trgt = lumen_area_grad(eptm)
         return (Ky * (Vy - V0) * grad_srce, Ky * (Vy - V0) * grad_trgt)
 
