@@ -10,7 +10,7 @@ from ..utils.connectivity import face_face_connectivity
 logger = logging.getLogger(name=__name__)
 
 
-def split_vert(sheet, vert, face, to_rewire, epsilon, recenter=False):
+def split_vert(sheet, vert, face, to_rewire, epsilon, recenter=False, shift=None):
     """Creates a new vertex and moves it towards the center of face.
 
     The edges in to_rewire will be connected to the new vertex.
@@ -32,26 +32,32 @@ def split_vert(sheet, vert, face, to_rewire, epsilon, recenter=False):
 
     """
     logger.debug("splitting vertex %d", vert)
-
+    print("split vertex")
+    print(vert, face)
     # Add a vertex
     this_vert = sheet.vert_df.loc[vert:vert]  # avoid type munching
-    sheet.vert_df = pd.concat([sheet.vert_df, this_vert], ignore_index=True)
-
-    new_vert = sheet.vert_df.index[-1]
+    sheet.vert_df = pd.concat([sheet.vert_df, this_vert], ignore_index=True) #créer un nouveau vertex à la fin de vert_df
+    # sheet.vert_df = sheet.vert_df.append(this_vert, ignore_index=True)
+    new_vert = sheet.vert_df.index[-1] # récupère l'indice du nouveau vertex créer
+    print(new_vert)
     # Move it towards the face center
-    r_ia = sheet.face_df.loc[face, sheet.coords] - sheet.vert_df.loc[vert, sheet.coords]
-    shift = r_ia * epsilon / np.linalg.norm(r_ia)
+    if shift is None:
+        r_ia = sheet.face_df.loc[face, sheet.coords] - sheet.vert_df.loc[vert, sheet.coords]
+        shift = r_ia * epsilon / np.linalg.norm(r_ia)
+
     if recenter:
         sheet.vert_df.loc[new_vert, sheet.coords] += shift / 2.0
         sheet.vert_df.loc[vert, sheet.coords] -= shift / 2.0
 
     else:
         sheet.vert_df.loc[new_vert, sheet.coords] += shift
-
+    print(sheet.edge_df.loc[to_rewire.index])
     # rewire
     sheet.edge_df.loc[to_rewire.index] = to_rewire.replace(
         {"srce": vert, "trgt": vert}, new_vert
     )
+    print(sheet.edge_df.loc[to_rewire.index])
+    print("END split vertex")
 
 
 def add_vert(eptm, edge):
@@ -230,7 +236,7 @@ def collapse_edge(sheet, edge, reindex=True, allow_two_sided=False):
     Returns the index of the collapsed edge's remaining vertex (its srce)
 
     """
-
+    print("collapse_ edge_ base topology")
     logger.debug("collapsing edge %d", edge)
     srce, trgt = np.sort(sheet.edge_df.loc[edge, ["srce", "trgt"]]).astype(int)
 
