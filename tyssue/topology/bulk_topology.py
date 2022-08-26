@@ -145,17 +145,33 @@ def split_vert(eptm, vert, face=None, multiplier=1.5, recenter=False):
     print(eptm.face_df.loc[face])
     print(eptm.edge_df[eptm.edge_df['face']==face][['srce', 'trgt']])
     print("choose transition")
-    if cells.loc[cell, "size"] == 3:
+
+    np.where(cells['size'] == 3)
+    if len(cells.loc[np.where(cells['size'] == 4)].index) == 0:
         logger.info(f"OI for face {face} of cell {cell}")
         print("OI_transition")
         _OI_transition(eptm, all_edges, elements, multiplier, recenter=recenter)
-    elif cells.loc[cell, "size"] == 4:
-        logger.info(f"OH for face {face} of cell {cell}")
-        print('OH transition')
-        _OH_transition(eptm, all_edges, elements, multiplier, recenter=recenter)
     else:
-        logger.info("Nothing happened ")
-        return 1
+        face = cells.loc[np.where(cells['size'] == 4)].index[0]
+        cell = cells.loc[faces.loc[pair, "cell"], "size"].idxmin()
+        face = pair[0] if pair[0] in cells.loc[cell, "faces"] else pair[1]
+        elements = vert, face, cell
+        logger.info(f"OI for face {face} of cell {cell}")
+        print("OI_transition")
+        _OI_transition(eptm, all_edges, elements, multiplier, recenter=recenter)
+
+    # if cells.loc[cell, "size"] == 3:
+    #     logger.info(f"OI for face {face} of cell {cell}")
+    #     print("OI_transition")
+    #     _OI_transition(eptm, all_edges, elements, multiplier, recenter=recenter)
+    # elif cells.loc[cell, "size"] == 4:
+    #     logger.info(f"OH for face {face} of cell {cell}")
+    #     print('OH transition')
+    #     _OH_transition(eptm, all_edges, elements, multiplier, recenter=recenter)
+    # else:
+    #     logger.info("Nothing happened ")
+    #     return 1
+
 
     # Tidy up
     new_edges = []
