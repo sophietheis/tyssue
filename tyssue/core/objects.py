@@ -857,6 +857,7 @@ class Epithelium:
         the opposite face or -1 if the face has no opposite.
 
         """
+        print("get_opposite_faces")
         face_v = self.edge_df.groupby("face").apply(lambda df: frozenset(df["srce"]))
         face_v2 = pd.Series(data=face_v.index, index=face_v.values)
         grouped = face_v2.groupby(level=0)

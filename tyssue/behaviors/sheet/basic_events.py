@@ -45,6 +45,7 @@ def reconnect(sheet, manager, **kwargs):
     Sanson_ bioRxiv 704932; doi: https://doi.org/10.1101/704932
 
     """
+    sheet.get_opposite_faces()
     sheet.settings.update(kwargs)
     nv = sheet.Nv
     merge_vertices(sheet)

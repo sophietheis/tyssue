@@ -144,6 +144,7 @@ def split_vert(eptm, vert, face=None, multiplier=1.5, recenter=False):
     print(vert,eptm.vert_df.loc[vert, 'segment'], face, eptm.face_df.loc[face, 'segment'], cell)
     print(eptm.face_df.loc[face])
     print(eptm.edge_df[eptm.edge_df['face']==face][['srce', 'trgt']])
+    print("choose transition")
     if cells.loc[cell, "size"] == 3:
         logger.info(f"OI for face {face} of cell {cell}")
         print("OI_transition")
@@ -151,7 +152,7 @@ def split_vert(eptm, vert, face=None, multiplier=1.5, recenter=False):
     elif cells.loc[cell, "size"] == 4:
         logger.info(f"OH for face {face} of cell {cell}")
         print('OH transition')
-        # _OH_transition(eptm, all_edges, elements, multiplier, recenter=recenter)
+        _OH_transition(eptm, all_edges, elements, multiplier, recenter=recenter)
     else:
         logger.info("Nothing happened ")
         return 1
@@ -204,8 +205,7 @@ def split_vert(eptm, vert, face=None, multiplier=1.5, recenter=False):
 
 def _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False):
     print('inside OI')
-    if 'opposite' not in eptm.face_df.columns:
-        eptm.get_opposite_faces()
+    eptm.get_opposite_faces()
     epsilon = eptm.settings.get("threshold_length", 0.1) * multiplier
     vert, face, cell = elements
     print(vert, face, eptm.face_df.loc[face, 'segment'], cell)
@@ -336,10 +336,12 @@ def _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False):
     print("CELL")
     print(cell_A, cell_B, cell_C, cell_D)
 
+    # Add all edges from cell B
     connected = all_edges[
         all_edges['cell'] == cell_B]
     print(connected[['srce', 'trgt', 'face', 'segment', 'cell']])
 
+    # Add apical or basal edge for cell C
     srce = a_or_b_edges[a_or_b_edges['cell'] == cell_B].iloc[0]['srce']
     trgt = a_or_b_edges[a_or_b_edges['cell'] == cell_B].iloc[0]['trgt']
     new_edges = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &
@@ -347,6 +349,7 @@ def _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False):
     connected = pd.concat((connected, new_edges))
     print(connected[['srce', 'trgt', 'face', 'segment', 'cell']])
 
+    # Add apical or basal edge for cell D
     srce = a_or_b_edges[a_or_b_edges['cell'] == cell_B].iloc[1]['srce']
     trgt = a_or_b_edges[a_or_b_edges['cell'] == cell_B].iloc[1]['trgt']
     new_edges = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &

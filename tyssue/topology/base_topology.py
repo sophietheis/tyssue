@@ -262,6 +262,11 @@ def collapse_edge(sheet, edge, reindex=True, allow_two_sided=False):
     sheet.edge_df.replace({"srce": trgt, "trgt": trgt}, srce, inplace=True)
     # all the edges parallel to the original
     collapsed = sheet.edge_df.query("srce == trgt")
+    print("collapsed")
+    if 'segment' in sheet.edge_df:
+        print(collapsed[['srce', 'trgt', 'face', 'segment', 'cell']])
+    else:
+        print(collapsed[['srce', 'trgt', 'face']])
     sheet.edge_df.drop(collapsed.index, axis=0, inplace=True)
     if not allow_two_sided:
         logger.debug("dropped two sided cells")
