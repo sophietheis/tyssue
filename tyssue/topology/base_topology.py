@@ -181,8 +181,15 @@ def drop_two_sided_faces(eptm):
         return
 
     two_sided = eptm.face_df[num_sides < 3].index
+    print("two_sided")
+    print(two_sided)
     logger.debug("dropping %d 2-sided faces", two_sided.size)
     edges = eptm.edge_df[eptm.edge_df["face"].isin(two_sided)].index
+    if 'segment' in eptm.edge_df:
+        print(eptm.edge_df.loc[edges, ['srce', 'trgt', 'face', 'segment', 'cell', 'opposite']])
+    else:
+        print(eptm.edge_df.loc[edges, ['srce', 'trgt', 'face']])
+    print(edges)
     eptm.edge_df.drop(edges, axis=0, inplace=True)
     eptm.face_df.drop(two_sided, axis=0, inplace=True)
 
@@ -236,6 +243,7 @@ def collapse_edge(sheet, edge, reindex=True, allow_two_sided=False):
     Returns the index of the collapsed edge's remaining vertex (its srce)
 
     """
+    sheet_save = sheet.copy(deep_copy=True)
     print("collapse_ edge_ base topology")
     logger.debug("collapsing edge %d", edge)
     srce, trgt = np.sort(sheet.edge_df.loc[edge, ["srce", "trgt"]]).astype(int)
@@ -269,12 +277,14 @@ def collapse_edge(sheet, edge, reindex=True, allow_two_sided=False):
         print(collapsed[['srce', 'trgt', 'face']])
     sheet.edge_df.drop(collapsed.index, axis=0, inplace=True)
     if not allow_two_sided:
+        print('dropped_two_faces')
         logger.debug("dropped two sided cells")
         drop_two_sided_faces(sheet)
 
     if reindex:
         sheet.reset_index()
         sheet.reset_topo()
+    sheet.get_opposite_faces()
     return srce
 
 

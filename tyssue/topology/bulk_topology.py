@@ -146,19 +146,18 @@ def split_vert(eptm, vert, face=None, multiplier=1.5, recenter=False):
     print(eptm.edge_df[eptm.edge_df['face']==face][['srce', 'trgt']])
     print("choose transition")
 
-    np.where(cells['size'] == 3)
-    if len(cells.loc[np.where(cells['size'] == 4)].index) == 0:
+    if len(cells.iloc[np.where(cells['size'] == 4)].index) == 0:
         logger.info(f"OI for face {face} of cell {cell}")
         print("OI_transition")
         _OI_transition(eptm, all_edges, elements, multiplier, recenter=recenter)
     else:
-        face = cells.loc[np.where(cells['size'] == 4)].index[0]
+        face = cells.iloc[np.where(cells['size'] == 4)].index[0]
         cell = cells.loc[faces.loc[pair, "cell"], "size"].idxmin()
-        face = pair[0] if pair[0] in cells.loc[cell, "faces"] else pair[1]
+        # face = pair[0] if pair[0] in cells.loc[cell, "faces"] else pair[1]
         elements = vert, face, cell
         logger.info(f"OI for face {face} of cell {cell}")
-        print("OI_transition")
-        _OI_transition(eptm, all_edges, elements, multiplier, recenter=recenter)
+        print("OH_transition")
+        _OH_transition(eptm, all_edges, elements, multiplier, recenter=recenter)
 
     # if cells.loc[cell, "size"] == 3:
     #     logger.info(f"OI for face {face} of cell {cell}")
@@ -183,7 +182,8 @@ def split_vert(eptm, vert, face=None, multiplier=1.5, recenter=False):
     eptm.reset_topo()
     print(new_edges)
 
-    for cell in all_edges["cell"].unique():
+    # for cell in all_edges["cell"].unique():
+    for cell in range(eptm.Nc):
         try:
             close_cell(eptm, cell)
         except ValueError as e:
@@ -219,7 +219,8 @@ def split_vert(eptm, vert, face=None, multiplier=1.5, recenter=False):
     return 0
 
 
-def _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False):
+def _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False,
+                   cell_A=None, cell_B=None, cell_C=None, cell_D=None):
     print('inside OI')
     eptm.get_opposite_faces()
     epsilon = eptm.settings.get("threshold_length", 0.1) * multiplier
@@ -227,127 +228,128 @@ def _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False):
     print(vert, face, eptm.face_df.loc[face, 'segment'], cell)
     print("all_edges")
     print(all_edges[['srce', 'trgt', 'face', 'segment', 'cell']])
-
+    if ('apical' not in all_edges['segment']) & ('basal' not in all_edges['segment']):
+        return
     # Get cell and assign a "function"
     cells = np.unique(all_edges["cell"])
-    #if more than 2 cells are in the border => abort
-    val, count = np.unique(all_edges['is_border'], return_counts=True)
-    print(val, count)
-    if True in val:
-        print("true in count")
-        print(count[np.where(val==True)])
-        if count[np.where(val==True)] >= 10:
-            print('abort border')
-            return
+    if cell_A is None:
+        #if more than 2 cells are in the border => abort
+        val, count = np.unique(all_edges['is_border'], return_counts=True)
+        print(val, count)
+        if True in val:
+            print("true in count")
+            print(count[np.where(val==True)])
+            if count[np.where(val==True)] >= 10:
+                print('abort border')
+                return
+    a_or_b_edges = all_edges[(all_edges['segment'] == "apical") |
+                             (all_edges['segment'] == "basal")]
 
-    if len(cells) == 4:
-        print("np_cell")
-        print(cells)
-        a_or_b_edges = all_edges[(all_edges['segment'] == "apical") |
-                                 (all_edges['segment'] == "basal")]
-        cell_C = cell
+    if cell_A is None :
+        if len(cells) == 4:
+            print("np_cell")
+            print(cells)
 
-        srce = a_or_b_edges[(a_or_b_edges['cell'] == cell)].iloc[0]['srce']
-        trgt = a_or_b_edges[(a_or_b_edges['cell'] == cell)].iloc[0]['trgt']
-        cell_A = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &
-                              (a_or_b_edges['trgt'] == srce)]['cell'].to_numpy()[0]
+            cell_C = cell
 
-        srce = a_or_b_edges[(a_or_b_edges['cell'] == cell)].iloc[1]['srce']
-        trgt = a_or_b_edges[(a_or_b_edges['cell'] == cell)].iloc[1]['trgt']
-        cell_B = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &
-                              (a_or_b_edges['trgt'] == srce)]['cell'].to_numpy()[0]
+            srce = a_or_b_edges[(a_or_b_edges['cell'] == cell)].iloc[0]['srce']
+            trgt = a_or_b_edges[(a_or_b_edges['cell'] == cell)].iloc[0]['trgt']
+            cell_A = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &
+                                  (a_or_b_edges['trgt'] == srce)]['cell'].to_numpy()[0]
 
-        cell_D = list(set(cells).symmetric_difference(set([cell_A, cell_B, cell_C,])))[0]
+            srce = a_or_b_edges[(a_or_b_edges['cell'] == cell)].iloc[1]['srce']
+            trgt = a_or_b_edges[(a_or_b_edges['cell'] == cell)].iloc[1]['trgt']
+            cell_B = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &
+                                  (a_or_b_edges['trgt'] == srce)]['cell'].to_numpy()[0]
 
-    elif len(cells) > 4:
-        print("np_cell")
-        print(cells)
-        a_or_b_edges = all_edges[(all_edges['segment'] == "apical") |
-                                 (all_edges['segment'] == "basal")]
-        cell_C = cell
+            cell_D = list(set(cells).symmetric_difference(set([cell_A, cell_B, cell_C,])))[0]
 
-        srce = a_or_b_edges[(a_or_b_edges['cell'] == cell_C)].iloc[0]['srce']
-        trgt = a_or_b_edges[(a_or_b_edges['cell'] == cell_C)].iloc[0]['trgt']
-        cell_A = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &
-                               (a_or_b_edges['trgt'] == srce)]['cell'].to_numpy()[0]
+        elif len(cells) > 4:
+            print("np_cell")
+            print(cells)
+            a_or_b_edges = all_edges[(all_edges['segment'] == "apical") |
+                                     (all_edges['segment'] == "basal")]
+            cell_C = cell
 
-        srce = a_or_b_edges[(a_or_b_edges['cell'] == cell_C)].iloc[1]['srce']
-        trgt = a_or_b_edges[(a_or_b_edges['cell'] == cell_C)].iloc[1]['trgt']
-        cell_B = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &
-                              (a_or_b_edges['trgt'] == srce)]['cell'].to_numpy()[0]
+            srce = a_or_b_edges[(a_or_b_edges['cell'] == cell_C)].iloc[0]['srce']
+            trgt = a_or_b_edges[(a_or_b_edges['cell'] == cell_C)].iloc[0]['trgt']
+            cell_A = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &
+                                   (a_or_b_edges['trgt'] == srce)]['cell'].to_numpy()[0]
 
-        srce = a_or_b_edges[(a_or_b_edges['cell'] == cell_B)].iloc[0]['srce']
-        trgt = a_or_b_edges[(a_or_b_edges['cell'] == cell_B)].iloc[0]['trgt']
-        cell_D = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &
-                              (a_or_b_edges['trgt'] == srce)]['cell'].to_numpy()[0]
-        if cell_D == cell_B:
-            srce = a_or_b_edges[(a_or_b_edges['cell'] == cell_B)].iloc[1]['srce']
-            trgt = a_or_b_edges[(a_or_b_edges['cell'] == cell_B)].iloc[1]['trgt']
+            srce = a_or_b_edges[(a_or_b_edges['cell'] == cell_C)].iloc[1]['srce']
+            trgt = a_or_b_edges[(a_or_b_edges['cell'] == cell_C)].iloc[1]['trgt']
+            cell_B = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &
+                                  (a_or_b_edges['trgt'] == srce)]['cell'].to_numpy()[0]
+
+            srce = a_or_b_edges[(a_or_b_edges['cell'] == cell_B)].iloc[0]['srce']
+            trgt = a_or_b_edges[(a_or_b_edges['cell'] == cell_B)].iloc[0]['trgt']
             cell_D = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &
                                   (a_or_b_edges['trgt'] == srce)]['cell'].to_numpy()[0]
-        cell_A = [cell_A]
-        cell_A.append(list(set(cells).symmetric_difference(set([cell_A[0], cell_B, cell_C, cell_D]))))
+            if cell_D == cell_B:
+                srce = a_or_b_edges[(a_or_b_edges['cell'] == cell_B)].iloc[1]['srce']
+                trgt = a_or_b_edges[(a_or_b_edges['cell'] == cell_B)].iloc[1]['trgt']
+                cell_D = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &
+                                      (a_or_b_edges['trgt'] == srce)]['cell'].to_numpy()[0]
+            cell_A = [cell_A]
+            cell_A.append(list(set(cells).symmetric_difference(set([cell_A[0], cell_B, cell_C, cell_D]))))
 
-    elif len(cells) == 3:
-        return
-        print("np_cell")
-        print(cells)
+        elif len(cells) == 3:
+            return
+            print("np_cell")
+            print(cells)
 
-        a_or_b_edges = all_edges[(all_edges['segment'] == "apical") |
-                                 (all_edges['segment'] == "basal")]
-
-        center_cell = cells[0]
-        if len(a_or_b_edges[(a_or_b_edges['cell']==cells[1]) &
-                         ((a_or_b_edges['srce']==a_or_b_edges[a_or_b_edges['cell']==center_cell].iloc[0]['trgt']) &
-                          (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0]['srce'])) |
-                         ((a_or_b_edges['srce'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1]['trgt']) &
-                          (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1]['srce']))
-                         ]) == 1 & len(a_or_b_edges[(a_or_b_edges['cell'] == cells[2]) &
-                             ((a_or_b_edges['srce'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
-                                 'trgt']) &
-                              (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
-                                  'srce'])) |
-                             ((a_or_b_edges['srce'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
-                                 'trgt']) &
-                              (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
-                                  'srce']))
-                             ]) == 1 :
-            cell_C = center_cell
-            cell_A = cells[1]
-            cell_B = cells[2]
-        else:
-            center_cell = cells[1]
-            if len(a_or_b_edges[(a_or_b_edges['cell'] == cells[0]) &
-                                ((a_or_b_edges['srce'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
-                                    'trgt']) &
-                                 (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
-                                     'srce'])) |
-                                ((a_or_b_edges['srce'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
-                                    'trgt']) &
-                                 (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
-                                     'srce']))
-                   ]) == 1 & len(a_or_b_edges[(a_or_b_edges['cell'] == cells[2]) &
-                                              ((a_or_b_edges['srce'] ==
-                                                a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
-                                                    'trgt']) &
-                                               (a_or_b_edges['trgt'] ==
-                                                a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
-                                                    'srce'])) |
-                                              ((a_or_b_edges['srce'] ==
-                                                a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
-                                                    'trgt']) &
-                                               (a_or_b_edges['trgt'] ==
-                                                a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
-                                                    'srce']))
-                                 ]) == 1:
+            center_cell = cells[0]
+            if len(a_or_b_edges[(a_or_b_edges['cell']==cells[1]) &
+                             ((a_or_b_edges['srce']==a_or_b_edges[a_or_b_edges['cell']==center_cell].iloc[0]['trgt']) &
+                              (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0]['srce'])) |
+                             ((a_or_b_edges['srce'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1]['trgt']) &
+                              (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1]['srce']))
+                             ]) == 1 & len(a_or_b_edges[(a_or_b_edges['cell'] == cells[2]) &
+                                 ((a_or_b_edges['srce'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
+                                     'trgt']) &
+                                  (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
+                                      'srce'])) |
+                                 ((a_or_b_edges['srce'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
+                                     'trgt']) &
+                                  (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
+                                      'srce']))
+                                 ]) == 1 :
                 cell_C = center_cell
-                cell_A = cells[0]
+                cell_A = cells[1]
                 cell_B = cells[2]
             else:
-                cell_C = cells[2]
-                cell_A = cells[0]
-                cell_B = cells[1]
-        cell_D = np.NaN
+                center_cell = cells[1]
+                if len(a_or_b_edges[(a_or_b_edges['cell'] == cells[0]) &
+                                    ((a_or_b_edges['srce'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
+                                        'trgt']) &
+                                     (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
+                                         'srce'])) |
+                                    ((a_or_b_edges['srce'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
+                                        'trgt']) &
+                                     (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
+                                         'srce']))
+                       ]) == 1 & len(a_or_b_edges[(a_or_b_edges['cell'] == cells[2]) &
+                                                  ((a_or_b_edges['srce'] ==
+                                                    a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
+                                                        'trgt']) &
+                                                   (a_or_b_edges['trgt'] ==
+                                                    a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
+                                                        'srce'])) |
+                                                  ((a_or_b_edges['srce'] ==
+                                                    a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
+                                                        'trgt']) &
+                                                   (a_or_b_edges['trgt'] ==
+                                                    a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
+                                                        'srce']))
+                                     ]) == 1:
+                    cell_C = center_cell
+                    cell_A = cells[0]
+                    cell_B = cells[2]
+                else:
+                    cell_C = cells[2]
+                    cell_A = cells[0]
+                    cell_B = cells[1]
+            cell_D = np.NaN
 
     print("CELL")
     print(cell_A, cell_B, cell_C, cell_D)
@@ -375,6 +377,8 @@ def _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False):
 
     cell_B_lat_faces = connected[(connected['cell'] == cell_B) &
                                  (connected['segment'] == 'lateral')]['face']
+    print("cell_B_lat_faces")
+    print(cell_B_lat_faces)
     for f in cell_B_lat_faces:
         opp_face = eptm.face_df.loc[f, 'opposite']
         new_edges = all_edges[(all_edges['face'] == opp_face)]
@@ -405,40 +409,120 @@ def _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False):
 
 
 def _OH_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False):
-
+    print('start oh_transition')
     epsilon = eptm.settings.get("threshold_length", 0.1) * multiplier
     vert, face, cell = elements
 
-    # all_cell_edges = eptm.edge_df.query(f'cell == {cell}').copy()
-    cell_edges = all_edges.query(f"cell == {cell}").copy()
+    # Get cell and assign a "function"
+    cells = np.unique(all_edges["cell"])
     # if more than 2 cells are in the border => abort
     val, count = np.unique(all_edges['is_border'], return_counts=True)
     print(val, count)
     if True in val:
+        print("true in count")
+        print(count[np.where(val == True)])
         if count[np.where(val == True)] >= 10:
             print('abort border')
             return
-    face_verts = cell_edges.groupby("face").apply(
-        lambda df: set(df["srce"]).union(df["trgt"]) - {vert}
-    )
 
-    for face_, verts_ in face_verts.items():
-        if not verts_.intersection(face_verts.loc[face]):
-            opp_face = face_
-            break
+    if len(cells) == 4:
+        print("np_cell")
+        print(cells)
+        count_segment = all_edges[all_edges['segment'] == 'lateral'].value_counts('cell')
+        # Les cellules à 4 cotés sont C et D
+        cell_C, cell_D = count_segment[count_segment == 4].index
+        # Les cellules à 6 cotés sont A et B
+        cell_A, cell_B = count_segment[count_segment == 6].index
     else:
-        raise ValueError
+        return
+    print("CELL")
+    print(cell_A, cell_B, cell_C, cell_D)
 
-    for to_split in (face, opp_face):
-        face_edges = all_edges.query(f"face == {to_split}").copy()
+    # 1-Create junction AB connected to lateral triangle cell and apical/basal surface
+    cell_A_lateral_face = np.unique(all_edges[(all_edges['cell']==cell_A) & (all_edges['segment']=='lateral') ][['srce', 'trgt', 'face', 'segment', 'cell']]['face'])
+    sides_3_lateral_face = eptm.face_df.loc[cell_A_lateral_face][eptm.face_df.loc[cell_A_lateral_face]['num_sides'] == 3].index[0]
+    connected = all_edges[all_edges['segment']=='lateral']
 
-        (prev_v,) = face_edges[face_edges["trgt"] == vert]["srce"]
-        (next_v,) = face_edges[face_edges["srce"] == vert]["trgt"]
-        connected = all_edges[
-            all_edges["trgt"].isin((next_v, prev_v))
-            | all_edges["srce"].isin((next_v, prev_v))
+    r_ia = eptm.face_df.loc[sides_3_lateral_face, eptm.coords] - \
+           eptm.vert_df.loc[vert, eptm.coords]
+    shift = r_ia * epsilon / np.linalg.norm(r_ia)
+    base_split_vert(eptm, vert, face, connected, epsilon, recenter, shift=shift)
+
+    ## Should be place differently if it is work...
+    # Tidy up
+    new_edges = []
+    for face in all_edges["face"].unique():
+        new_edge = close_face(eptm, face)
+        if new_edge is not None:
+            new_edges.append(new_edge)
+    eptm.reset_index()
+    eptm.reset_topo()
+    print(new_edges)
+
+    # for cell in all_edges["cell"].unique():
+    for cell in range(eptm.Nc):
+        try:
+            close_cell(eptm, cell)
+        except ValueError as e:
+            print("close failed for cell")
+            logger.error(f"Close failed for cell {cell}")
+            raise e
+
+    eptm.reset_index()
+    eptm.reset_topo()
+
+    if isinstance(eptm, Monolayer):
+        for vert_ in eptm.vert_df.index[-2:]:
+            eptm.guess_vert_segment(vert_)
+        for face_ in eptm.face_df.index[-2:]:
+            eptm.guess_face_segment(face_)
+
+    eptm.reset_index()
+    eptm.reset_topo()
+
+    print(sides_3_lateral_face)
+    print(eptm.face_df.loc[sides_3_lateral_face, 'num_sides'])
+    print(eptm.face_df.loc[sides_3_lateral_face, 'opposite'])
+    print(eptm.face_df.loc[eptm.face_df.loc[sides_3_lateral_face, 'opposite'], 'num_sides'])
+    # call _OI?
+    print("New_all_edges")
+    print(all_edges.index)
+    # all_edges = all_edges.drop(all_edges[all_edges['face'] == sides_3_lateral_face].index)
+    # all_edges = all_edges.drop(all_edges[all_edges['face'] == eptm.face_df.loc[sides_3_lateral_face, 'opposite']].index)
+
+    all_edges = eptm.edge_df[
+        (eptm.edge_df["trgt"] == vert) | (eptm.edge_df["srce"] == vert)
         ]
-        base_split_vert(eptm, vert, to_split, connected, epsilon, recenter)
+    print(all_edges.index)
+    _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False,
+                   cell_A=cell_A, cell_B=cell_B, cell_C=cell_C, cell_D=cell_D)
+
+
+
+    # # all_cell_edges = eptm.edge_df.query(f'cell == {cell}').copy()
+    # cell_edges = all_edges.query(f"cell == {cell}").copy()
+    #
+    # face_verts = cell_edges.groupby("face").apply(
+    #     lambda df: set(df["srce"]).union(df["trgt"]) - {vert}
+    # )
+    #
+    # for face_, verts_ in face_verts.items():
+    #     if not verts_.intersection(face_verts.loc[face]):
+    #         opp_face = face_
+    #         break
+    # else:
+    #     raise ValueError
+    #
+    # for to_split in (face, opp_face):
+    #     face_edges = all_edges.query(f"face == {to_split}").copy()
+    #
+    #     (prev_v,) = face_edges[face_edges["trgt"] == vert]["srce"]
+    #     (next_v,) = face_edges[face_edges["srce"] == vert]["trgt"]
+    #     connected = all_edges[
+    #         all_edges["trgt"].isin((next_v, prev_v))
+    #         | all_edges["srce"].isin((next_v, prev_v))
+    #     ]
+    #     base_split_vert(eptm, vert, to_split, connected, epsilon, recenter)
 
 
 def get_division_edges(
