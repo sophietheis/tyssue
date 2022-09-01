@@ -124,8 +124,13 @@ def _set_new_pos_IH(eptm, e_1011, vertices):
         [np.linalg.norm(v_n - v_m) for (v_n, v_m) in itertools.combinations(v_0ns, 2)]
     )
     # eq. 46 - 49
-    for vk, v_0k in zip((v7, v8, v9), v_0ns):
-        eptm.vert_df.loc[vk, eptm.coords] = r0 + (Dl_th / l_max) * v_0k
+    for i, vk, v_0k in zip(range(3), (v7, v8, v9), v_0ns):
+        if i == 2:
+            # eptm.vert_df.loc[vk, eptm.coords] = r0 + (Dl_th / l_max) * v_0k
+            eptm.vert_df.loc[vk, eptm.coords] = r0
+            eptm.vert_df.loc[vk, 'z'] = 0
+        else:
+            eptm.vert_df.loc[vk, eptm.coords] = r0 + ((Dl_th*5) / l_max) * v_0k
 
 def _get_vertex_pairs_IH(eptm, e_1011):
 
@@ -406,11 +411,11 @@ def IH_transition(eptm, e_1011):
             (eptm.edge_df["srce"] == v11) & (eptm.edge_df["trgt"] == vb)
         ].index
         eptm.edge_df.loc[e_11bs, "srce"] = new
-        if i == 2:
-            eptm.edge_df.loc[e_a10s, "segment"] = "lateral"
-            eptm.edge_df.loc[e_10as, "segment"] = "lateral"
-            eptm.edge_df.loc[e_b11s, "segment"] = "lateral"
-            eptm.edge_df.loc[e_11bs, "segment"] = "lateral"
+        # if i == 2:
+        #     eptm.edge_df.loc[e_a10s, "segment"] = "lateral"
+        #     eptm.edge_df.loc[e_10as, "segment"] = "lateral"
+        #     eptm.edge_df.loc[e_b11s, "segment"] = "lateral"
+        #     eptm.edge_df.loc[e_11bs, "segment"] = "lateral"
 
     _set_new_pos_IH(eptm, e_1011, vertices)
 
@@ -426,12 +431,12 @@ def IH_transition(eptm, e_1011):
     for i, eA, eB, (vi, vj) in zip(range(3),
         new_es[::2], new_es[1::2], [(v7, v8), (v8, v9), (v9, v7)]
     ):
-        if i == 0:
-            eptm.edge_df.loc[eA, ["srce", "trgt", "face", "cell"]] = vi, vj, fa, cA
-            eptm.edge_df.loc[eB, ["srce", "trgt", "face", "cell"]] = vj, vi, fb, cB
-        else:
-            eptm.edge_df.loc[eA, ["srce", "trgt", "face", "cell", "segment"]] = vi, vj, fa, cA, "lateral"
-            eptm.edge_df.loc[eB, ["srce", "trgt", "face", "cell", "segment"]] = vj, vi, fb, cB, "lateral"
+        # if i == 0:
+        eptm.edge_df.loc[eA, ["srce", "trgt", "face", "cell"]] = vi, vj, fa, cA
+        eptm.edge_df.loc[eB, ["srce", "trgt", "face", "cell"]] = vj, vi, fb, cB
+        # else:
+        #     eptm.edge_df.loc[eA, ["srce", "trgt", "face", "cell", "segment"]] = vi, vj, fa, cA, "lateral"
+        #     eptm.edge_df.loc[eB, ["srce", "trgt", "face", "cell", "segment"]] = vj, vi, fb, cB, "lateral"
 
     for cell in cells:
         for face in eptm.edge_df[eptm.edge_df["cell"] == cell]["face"]:

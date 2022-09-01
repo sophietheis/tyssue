@@ -37,63 +37,22 @@ def reconnect_3D(sheet, manager, **kwargs):
         short = sheet.edge_df[sheet.edge_df["length"] < d_min].index.to_numpy()
         random.shuffle(short)
 
-    # # HI transition
-    # short = sheet.edge_df[(sheet.edge_df["length"] < d_min)]
-    # max_f_length = short.groupby("face")["length"].apply(max)
-    # short_faces = sheet.face_df.loc[max_f_length[max_f_length < d_min].index]
-    # faces_HI = short_faces[short_faces["num_sides"] == 3].sort_values("area").index
-    # random.shuffle(faces_HI.to_numpy())
-    # already_done_faces = []
-    # while (faces_HI.shape[0]) and (faces_HI[0] not in already_done_faces):
-    #     HI_transition(sheet, faces_HI[0])
-    #     already_done_faces.append(faces_HI[0])
-    #
-    #     short = sheet.edge_df[(sheet.edge_df["length"] < d_min)]
-    #     max_f_length = short.groupby("face")["length"].apply(max)
-    #     short_faces = sheet.face_df.loc[max_f_length[max_f_length < d_min].index]
-    #     faces_HI = short_faces[short_faces["num_sides"] == 3].sort_values("area").index
-    #     random.shuffle(faces_HI.to_numpy())
+    # HI transition
+    short = sheet.edge_df[(sheet.edge_df["length"] < d_min)]
+    max_f_length = short.groupby("face")["length"].apply(max)
+    short_faces = sheet.face_df.loc[max_f_length[max_f_length < d_min].index]
+    faces_HI = short_faces[short_faces["num_sides"] == 3].sort_values("area").index
+    random.shuffle(faces_HI.to_numpy())
+    already_done_faces = []
+    while (faces_HI.shape[0]) and (faces_HI[0] not in already_done_faces):
+        HI_transition(sheet, faces_HI[0])
+        already_done_faces.append(faces_HI[0])
 
-    # # IH_transition
-    # short = sheet.edge_df[sheet.edge_df["length"] < d_min].index.to_numpy()
-    # for e in short:
-    #     IH_transition(sheet, e)
-    #
-    # # HI transition
-    # short = sheet.edge_df[(sheet.edge_df["length"] < d_min)]
-    # max_f_length = short.groupby("face")["length"].apply(max)
-    # short_faces = sheet.face_df.loc[max_f_length[max_f_length < d_min].index]
-    # faces_HI = short_faces[short_faces["num_sides"] == 3].sort_values("area").index
-    # for f in faces_HI:
-    #     HI_transition(sheet, f)
-
-
-    # # IH_transition
-    # short = sheet.edge_df[sheet.edge_df["length"] < d_min].index.to_numpy()
-    # invalid_edges = []
-    # while (short.shape[0]) and (short[0] not in invalid_edges):
-    #     valid = IH_transition(sheet, short[0])
-    #     if valid == -1:
-    #         invalid_edges.append(short[0])
-    #     short = sheet.edge_df[sheet.edge_df["length"] < d_min].index.to_numpy()
-    #
-    # # HI transition
-    # short = sheet.edge_df[(sheet.edge_df["length"] < d_min)]
-    # max_f_length = short.groupby("face")["length"].apply(max)
-    # short_faces = sheet.face_df.loc[max_f_length[max_f_length < d_min].index]
-    # faces_HI = short_faces[short_faces["num_sides"] == 3].sort_values("area").index
-    #
-    # invalid_faces = []
-    # while (faces_HI.shape[0]) and (faces_HI[0] not in invalid_faces):
-    #     valid = HI_transition(sheet, faces_HI[0])
-    #     if valid == -1:
-    #         invalid_faces.append(faces_HI[0])
-    #     short = sheet.edge_df[(sheet.edge_df["length"] < d_min)]
-    #     max_f_length = short.groupby("face")["length"].apply(max)
-    #     short_faces = sheet.face_df.loc[max_f_length[max_f_length < d_min].index]
-    #     faces_HI = short_faces[short_faces["num_sides"] == 3].sort_values("area").index
-
-
+        short = sheet.edge_df[(sheet.edge_df["length"] < d_min)]
+        max_f_length = short.groupby("face")["length"].apply(max)
+        short_faces = sheet.face_df.loc[max_f_length[max_f_length < d_min].index]
+        faces_HI = short_faces[short_faces["num_sides"] == 3].sort_values("area").index
+        random.shuffle(faces_HI.to_numpy())
 
     manager.append(reconnect_3D, **kwargs)
 
