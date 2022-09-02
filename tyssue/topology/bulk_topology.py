@@ -82,6 +82,60 @@ def close_cell(eptm, cell):
     eptm.reset_topo()
     return 0
 
+def find_rearangements(eptm):
+    """Finds the candidates for IH and HI transitions
+    Returns
+    -------
+    edges_HI: set of indexes of short edges
+    faces_IH: set of indexes of small triangular faces
+    """
+    l_th = eptm.settings.get("threshold_length", 1e-3)
+    shorts = eptm.edge_df[eptm.edge_df["length"] < l_th]
+    if not shorts.shape[0]:
+        return np.array([]), np.array([])
+    edges_IH = find_IHs(eptm, shorts)
+    faces_HI = find_HIs(eptm, shorts)
+    return edges_IH, faces_HI
+
+
+def find_IHs(eptm, shorts=None):
+
+    l_th = eptm.settings.get("threshold_length", 1e-3)
+    if shorts is None:
+        shorts = eptm.edge_df[eptm.edge_df["length"] < l_th]
+    if not shorts.shape[0]:
+        return []
+
+    edges_IH = shorts.groupby("srce").apply(
+        lambda df: pd.Series(
+            {
+                "edge": df.index[0],
+                "length": df["length"].iloc[0],
+                "num_sides": min(eptm.face_df.loc[df["face"], "num_sides"]),
+                "pair": frozenset(df.iloc[0][["srce", "trgt"]]),
+            }
+        )
+    )
+    # keep only one of the edges per vertex pair and sort by length
+    edges_IH = (
+        edges_IH[edges_IH["num_sides"] > 3]
+        .drop_duplicates("pair")
+        .sort_values("length")
+    )
+    return edges_IH["edge"].values
+
+
+def find_HIs(eptm, shorts=None):
+    l_th = eptm.settings.get("threshold_length", 1e-3)
+    if shorts is None:
+        shorts = eptm.edge_df[(eptm.edge_df["length"] < l_th)]
+    if not shorts.shape[0]:
+        return []
+
+    max_f_length = shorts.groupby("face")["length"].apply(max)
+    short_faces = eptm.face_df.loc[max_f_length[max_f_length < l_th].index]
+    faces_HI = short_faces[short_faces["num_sides"] == 3].sort_values("area").index
+    return faces_HI
 def check_condition4(func):
     @wraps(func)
     def decorated(eptm, *args, **kwargs):

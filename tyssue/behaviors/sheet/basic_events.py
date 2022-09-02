@@ -6,6 +6,8 @@ Small event module
 """
 import logging
 import random
+import numpy as np
+from itertools import count
 
 from ...geometry.sheet_geometry import SheetGeometry
 from ...topology.sheet_topology import cell_division
@@ -19,42 +21,103 @@ from .actions import (
     merge_vertices,
     remove,
 )
-
+MAX_ITER = 10
 logger = logging.getLogger(__name__)
-from ...topology.bulk_topology import IH_transition, HI_transition
+from ...topology.bulk_topology import IH_transition, HI_transition, find_rearangements
 def reconnect_3D(sheet, manager, **kwargs):
     sheet.get_opposite_faces()
-    sheet.settings.update(kwargs)
-    d_min = sheet.settings.get("threshold_length", 1e-3)
-
-    # IH_transition
-    short = sheet.edge_df[sheet.edge_df["length"] < d_min].index.to_numpy()
-    already_done_edges = []
-    random.shuffle(short)
-    while (short.shape[0]) and (short[0] not in already_done_edges):
-        IH_transition(sheet, short[0])
-        already_done_edges.append(short[0])
-        short = sheet.edge_df[sheet.edge_df["length"] < d_min].index.to_numpy()
-        random.shuffle(short)
-
-    # HI transition
-    short = sheet.edge_df[(sheet.edge_df["length"] < d_min)]
-    max_f_length = short.groupby("face")["length"].apply(max)
-    short_faces = sheet.face_df.loc[max_f_length[max_f_length < d_min].index]
-    faces_HI = short_faces[short_faces["num_sides"] == 3].sort_values("area").index
-    random.shuffle(faces_HI.to_numpy())
-    already_done_faces = []
-    while (faces_HI.shape[0]) and (faces_HI[0] not in already_done_faces):
-        HI_transition(sheet, faces_HI[0])
-        already_done_faces.append(faces_HI[0])
-
-        short = sheet.edge_df[(sheet.edge_df["length"] < d_min)]
-        max_f_length = short.groupby("face")["length"].apply(max)
-        short_faces = sheet.face_df.loc[max_f_length[max_f_length < d_min].index]
-        faces_HI = short_faces[short_faces["num_sides"] == 3].sort_values("area").index
-        random.shuffle(faces_HI.to_numpy())
-
     manager.append(reconnect_3D, **kwargs)
+
+    # twist faces
+    lateral_face_index = sheet.face_df[(sheet.face_df['segment'] == "lateral") &
+                                       (sheet.face_df['num_sides'] == 4) &
+                                       (sheet.face_df['opposite'] != -1)].index
+    angle = []
+    edges = []
+    for f in lateral_face_index:
+        if sheet.edge_df[(sheet.edge_df['face'] == f) &
+                         (sheet.edge_df['dz'] < 0.2) &
+                         (sheet.edge_df['dz'] > -0.2)].shape[0] == 2:
+            angle.append(np.arctan2(sheet.edge_df[(sheet.edge_df['face'] == f) &
+                                                  (sheet.edge_df['dz'] < 0.2) &
+                                                  (sheet.edge_df['dz'] > -0.2)][['dx', 'dy']].diff(axis=0).iloc[1][
+                                        'dy'],
+                                    sheet.edge_df[(sheet.edge_df['face'] == f) &
+                                                  (sheet.edge_df['dz'] < 0.2) &
+                                                  (sheet.edge_df['dz'] > -0.2)][['dx', 'dy']].diff(axis=0).iloc[1][
+                                        'dx']))
+            edges.append(sheet.edge_df[(sheet.edge_df['face'] == f) &
+                                       (sheet.edge_df['dz'] < 0.2) &
+                                       (sheet.edge_df['dz'] > -0.2)].index[0])
+
+    angle = np.array(angle) * 180 / np.pi
+
+    angle = [180 + a if a < 0 else a for a in angle]
+    angle = [180 - a if a > 90 else a for a in angle]
+    angle = np.array(angle)
+    twist_face = lateral_face_index[np.where(angle > 45)]
+    twist_edges = np.array(edges)[np.where(angle > 45)]
+
+    twist_face = twist_face[0::2]
+    twist_edges = twist_edges[0::2]
+    print("len twist edges")
+    print(len(twist_edges))
+    for e in twist_edges:
+        print("twist edges")
+
+        retcode = IH_transition(sheet, e)
+        if not retcode:
+            return 0
+
+
+
+    edges, faces = find_rearangements(sheet)
+    if len(edges):
+        for i in count():
+            if i == MAX_ITER:
+                return 3
+            retcode = IH_transition(sheet, np.random.choice(edges))
+            if not retcode:
+                return 0
+
+    elif len(faces) and with_t3:
+        for i in count():
+            if i == MAX_ITER:
+                return 3
+            retcode = HI_transition(sheet, np.random.choice(faces))
+            if not retcode:
+                return 0
+    return 1
+
+
+    # # IH_transition
+    # short = sheet.edge_df[sheet.edge_df["length"] < d_min].index.to_numpy()
+    # already_done_edges = []
+    # random.shuffle(short)
+    # while (short.shape[0]) and (short[0] not in already_done_edges):
+    #     IH_transition(sheet, short[0])
+    #     already_done_edges.append(short[0])
+    #     short = sheet.edge_df[sheet.edge_df["length"] < d_min].index.to_numpy()
+    #     random.shuffle(short)
+    #
+    # # HI transition
+    # short = sheet.edge_df[(sheet.edge_df["length"] < d_min)]
+    # max_f_length = short.groupby("face")["length"].apply(max)
+    # short_faces = sheet.face_df.loc[max_f_length[max_f_length < d_min].index]
+    # faces_HI = short_faces[short_faces["num_sides"] == 3].sort_values("area").index
+    # random.shuffle(faces_HI.to_numpy())
+    # already_done_faces = []
+    # while (faces_HI.shape[0]) and (faces_HI[0] not in already_done_faces):
+    #     HI_transition(sheet, faces_HI[0])
+    #     already_done_faces.append(faces_HI[0])
+    #
+    #     short = sheet.edge_df[(sheet.edge_df["length"] < d_min)]
+    #     max_f_length = short.groupby("face")["length"].apply(max)
+    #     short_faces = sheet.face_df.loc[max_f_length[max_f_length < d_min].index]
+    #     faces_HI = short_faces[short_faces["num_sides"] == 3].sort_values("area").index
+    #     random.shuffle(faces_HI.to_numpy())
+
+
 
 def reconnect(sheet, manager, **kwargs):
     """Performs reconnections (vertex merging / splitting) following Finegan et al. 2019
