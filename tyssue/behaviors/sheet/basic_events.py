@@ -28,46 +28,47 @@ def reconnect_3D(sheet, manager, **kwargs):
     sheet.get_opposite_faces()
     manager.append(reconnect_3D, **kwargs)
 
-    # twist faces
-    lateral_face_index = sheet.face_df[(sheet.face_df['segment'] == "lateral") &
-                                       (sheet.face_df['num_sides'] == 4) &
-                                       (sheet.face_df['opposite'] != -1)].index
-    angle = []
-    edges = []
-    for f in lateral_face_index:
-        if sheet.edge_df[(sheet.edge_df['face'] == f) &
-                         (sheet.edge_df['dz'] < 0.2) &
-                         (sheet.edge_df['dz'] > -0.2)].shape[0] == 2:
-            angle.append(np.arctan2(sheet.edge_df[(sheet.edge_df['face'] == f) &
-                                                  (sheet.edge_df['dz'] < 0.2) &
-                                                  (sheet.edge_df['dz'] > -0.2)][['dx', 'dy']].diff(axis=0).iloc[1][
-                                        'dy'],
-                                    sheet.edge_df[(sheet.edge_df['face'] == f) &
-                                                  (sheet.edge_df['dz'] < 0.2) &
-                                                  (sheet.edge_df['dz'] > -0.2)][['dx', 'dy']].diff(axis=0).iloc[1][
-                                        'dx']))
-            edges.append(sheet.edge_df[(sheet.edge_df['face'] == f) &
-                                       (sheet.edge_df['dz'] < 0.2) &
-                                       (sheet.edge_df['dz'] > -0.2)].index[0])
-
-    angle = np.array(angle) * 180 / np.pi
-
-    angle = [180 + a if a < 0 else a for a in angle]
-    angle = [180 - a if a > 90 else a for a in angle]
-    angle = np.array(angle)
-    twist_face = lateral_face_index[np.where(angle > 45)]
-    twist_edges = np.array(edges)[np.where(angle > 45)]
-
-    twist_face = twist_face[0::2]
-    twist_edges = twist_edges[0::2]
-    print("len twist edges")
-    print(len(twist_edges))
-    for e in twist_edges:
-        print("twist edges")
-
-        retcode = IH_transition(sheet, e)
-        if not retcode:
-            return 0
+    # # twist faces
+    # lateral_face_index = sheet.face_df[(sheet.face_df['segment'] == "lateral") &
+    #                                    (sheet.face_df['num_sides'] == 4) &
+    #                                    (sheet.face_df['opposite'] != -1)].index
+    # sides_4_faces = []
+    # angle = []
+    # edges = []
+    # for f in lateral_face_index:
+    #     if sheet.edge_df[(sheet.edge_df['face'] == f) &
+    #                      (sheet.edge_df['dz'] < 0.2) &
+    #                      (sheet.edge_df['dz'] > -0.2)].shape[0] == 2:
+    #         angle.append(np.arctan2(sheet.edge_df[(sheet.edge_df['face'] == f) &
+    #                                               (sheet.edge_df['dz'] < 0.2) &
+    #                                               (sheet.edge_df['dz'] > -0.2)][['dx', 'dy']].diff(axis=0).iloc[1][
+    #                                     'dy'],
+    #                                 sheet.edge_df[(sheet.edge_df['face'] == f) &
+    #                                               (sheet.edge_df['dz'] < 0.2) &
+    #                                               (sheet.edge_df['dz'] > -0.2)][['dx', 'dy']].diff(axis=0).iloc[1][
+    #                                     'dx']))
+    #         edges.append(sheet.edge_df[(sheet.edge_df['face'] == f) &
+    #                                    (sheet.edge_df['dz'] < 0.2) &
+    #                                    (sheet.edge_df['dz'] > -0.2)].index[0])
+    #
+    # angle = np.array(angle) * 180 / np.pi
+    #
+    # angle = [180 + a if a < 0 else a for a in angle]
+    # angle = [180 - a if a > 90 else a for a in angle]
+    # angle = np.array(angle)
+    # twist_face = lateral_face_index[np.where(angle > 30)]
+    # twist_edges = np.array(edges)[np.where(angle > 30)]
+    #
+    # twist_face = twist_face[0::2]
+    # twist_edges = twist_edges[0::2]
+    # print("len twist edges")
+    # print(len(twist_edges))
+    # for e in twist_edges:
+    #     print("twist edges")
+    #
+    #     retcode = IH_transition(sheet, e)
+    #     if not retcode:
+    #         return 0
 
 
 
@@ -80,13 +81,13 @@ def reconnect_3D(sheet, manager, **kwargs):
             if not retcode:
                 return 0
 
-    elif len(faces) and with_t3:
-        for i in count():
-            if i == MAX_ITER:
-                return 3
-            retcode = HI_transition(sheet, np.random.choice(faces))
-            if not retcode:
-                return 0
+    # elif len(faces):
+    #     for i in count():
+    #         if i == MAX_ITER:
+    #             return 3
+    #         retcode = HI_transition(sheet, np.random.choice(faces))
+    #         if not retcode:
+    #             return 0
     return 1
 
 
