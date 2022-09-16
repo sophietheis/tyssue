@@ -24,66 +24,108 @@ from .actions import (
 MAX_ITER = 10
 logger = logging.getLogger(__name__)
 from ...topology.bulk_topology import IH_transition, HI_transition, find_rearangements
+
+def find_twist_faces(sheet):
+    # twist faces
+    import math
+    def dot(vA, vB):
+        return vA[0] * vB[0] + vA[1] * vB[1]
+
+    def ang(vA, vB):
+        # Get dot prod
+        dot_prod = dot(vA, vB)
+        # Get magnitudes
+        magA = dot(vA, vA) ** 0.5
+        magB = dot(vB, vB) ** 0.5
+        # Get cosine value
+        cos_ = dot_prod / magA / magB
+        # Get angle in radians and then convert to degrees
+        angle = math.acos(dot_prod / magB / magA)
+        # Basically doing angle <- angle mod 360
+        ang_deg = math.degrees(angle) % 360
+
+        return ang_deg
+
+    lateral_face_index = sheet.face_df[(sheet.face_df['segment'] == "lateral") &
+                                       (sheet.face_df['num_sides'] == 4) &
+                                       (sheet.face_df['opposite'] != -1)].index
+    angle = []
+    edges = []
+    for f in lateral_face_index:
+
+        sub_edges = sheet.edge_df[(sheet.edge_df['face'] == f) &
+                                  (((sheet.edge_df['sz'] > 0) & (sheet.edge_df['tz'] > 0)) |
+                                   ((sheet.edge_df['sz'] < 0) & (sheet.edge_df['tz'] < 0)))]
+
+        if sub_edges.shape[0] == 2:
+            if (sub_edges.iloc[0]['srce'] != sub_edges.iloc[1]['trgt']) & sub_edges.iloc[1]['srce'] != sub_edges.iloc[0]['trgt']:
+
+                angle.append(ang(sub_edges.iloc[0][['dx', 'dy']], sub_edges.iloc[1][['dx', 'dy']]))
+                edges.append(sub_edges.index[0])
+            else:
+                angle.append(0)
+                edges.append(0)
+        else:
+            angle.append(0)
+            edges.append(0)
+
+    angle = [180 + a if a < 0 else a for a in angle]
+    angle = [180 - a if a > 90 else a for a in angle]
+    angle = np.array(angle)
+    twist_face = lateral_face_index[np.where(angle > 30)]
+    twist_edges = np.array(edges)[np.where(angle > 30)]
+    return twist_face, twist_edges
+
 def reconnect_3D(sheet, manager, **kwargs):
     sheet.get_opposite_faces()
     manager.append(reconnect_3D, **kwargs)
 
-    # # twist faces
-    # lateral_face_index = sheet.face_df[(sheet.face_df['segment'] == "lateral") &
-    #                                    (sheet.face_df['num_sides'] == 4) &
-    #                                    (sheet.face_df['opposite'] != -1)].index
-    # sides_4_faces = []
-    # angle = []
-    # edges = []
-    # for f in lateral_face_index:
-    #     if sheet.edge_df[(sheet.edge_df['face'] == f) &
-    #                      (sheet.edge_df['dz'] < 0.2) &
-    #                      (sheet.edge_df['dz'] > -0.2)].shape[0] == 2:
-    #         angle.append(np.arctan2(sheet.edge_df[(sheet.edge_df['face'] == f) &
-    #                                               (sheet.edge_df['dz'] < 0.2) &
-    #                                               (sheet.edge_df['dz'] > -0.2)][['dx', 'dy']].diff(axis=0).iloc[1][
-    #                                     'dy'],
-    #                                 sheet.edge_df[(sheet.edge_df['face'] == f) &
-    #                                               (sheet.edge_df['dz'] < 0.2) &
-    #                                               (sheet.edge_df['dz'] > -0.2)][['dx', 'dy']].diff(axis=0).iloc[1][
-    #                                     'dx']))
-    #         edges.append(sheet.edge_df[(sheet.edge_df['face'] == f) &
-    #                                    (sheet.edge_df['dz'] < 0.2) &
-    #                                    (sheet.edge_df['dz'] > -0.2)].index[0])
-    #
-    # angle = np.array(angle) * 180 / np.pi
-    #
-    # angle = [180 + a if a < 0 else a for a in angle]
-    # angle = [180 - a if a > 90 else a for a in angle]
-    # angle = np.array(angle)
-    # twist_face = lateral_face_index[np.where(angle > 30)]
-    # twist_edges = np.array(edges)[np.where(angle > 30)]
-    #
-    # twist_face = twist_face[0::2]
-    # twist_edges = twist_edges[0::2]
-    # print("len twist edges")
-    # print(len(twist_edges))
-    # for e in twist_edges:
-    #     print("twist edges")
-    #
-    #     retcode = IH_transition(sheet, e)
-    #     if not retcode:
-    #         return 0
+    # rearangement for twist faces
+    twist_face, twist_edge = find_twist_faces(sheet)
+    cpt = 0
+    while (len(twist_face) >= 2) and (cpt < MAX_ITER):
+        print("twist_face")
+        cpt+=1
+        e = random.randint(0, len(twist_edge)-1)
+        retcode = IH_transition(sheet, twist_edge[e])
+        if not retcode:
+            # return 0
+            break
+        twist_face, twist_edge = find_twist_faces(sheet)
 
-
+    # rearangement for small length edges
+    edges, faces = find_rearangements(sheet)
+    cpt = 0
+    while (len(edges) > 1) and (cpt < MAX_ITER):
+        cpt += 1
+        retcode = IH_transition(sheet, np.random.choice(edges))
+        if not retcode:
+            break
+        edges, faces = find_rearangements(sheet)
 
     edges, faces = find_rearangements(sheet)
-    if len(edges):
-        for i in count():
-            if i == MAX_ITER:
-                return 3
-            retcode = IH_transition(sheet, np.random.choice(edges))
-            if not retcode:
-                return 0
+    cpt = 0
+    while (len(faces) > 1) and (cpt < MAX_ITER):
+        cpt += 1
+        retcode = HI_transition(sheet, np.random.choice(faces))
+        if not retcode:
+            break
+        edges, faces = find_rearangements(sheet)
 
-    # elif len(faces):
+
+
+
+    # if len(edges):
     #     for i in count():
     #         if i == MAX_ITER:
+    #             return 3
+    #     retcode = IH_transition(sheet, np.random.choice(edges))
+    #     if not retcode:
+    #         return 0
+    #
+    # elif len(faces):
+    #     for i in count():
+    #         if i == MAX_ITER/2:
     #             return 3
     #         retcode = HI_transition(sheet, np.random.choice(faces))
     #         if not retcode:
