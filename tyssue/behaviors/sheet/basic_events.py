@@ -98,7 +98,9 @@ def reconnect_3D(sheet, manager, **kwargs):
     cpt = 0
     while (len(edges) > 1) and (cpt < MAX_ITER):
         cpt += 1
-        retcode = IH_transition(sheet, np.random.choice(edges))
+        e = np.random.choice(edges)
+
+        retcode = IH_transition(sheet, e)
         if not retcode:
             break
         edges, faces = find_rearangements(sheet)

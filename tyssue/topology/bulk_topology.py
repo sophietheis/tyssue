@@ -11,8 +11,7 @@ from ..core.monolayer import Monolayer
 from ..core.objects import _is_closed_cell, euler_characteristic
 from ..core.sheet import get_opposite
 from ..geometry.utils import rotation_matrix
-from .base_topology import add_vert, close_face, collapse_edge, remove_face
-from .base_topology import add_vert, close_face, condition_4i, condition_4ii
+from .base_topology import add_vert, close_face, collapse_edge, remove_face, merge_vertices, condition_4i, condition_4ii
 from .base_topology import split_vert as base_split_vert
 from .sheet_topology import face_division
 
@@ -151,11 +150,10 @@ def check_condition4(func):
 
     return decorated
 
-def _set_new_pos_IH(eptm, e_1011, vertices):
+def _set_new_pos_IH(eptm, e_1011, vertices, cells):
     """Okuda 2013 equations 46 to 56
     """
     Dl_th = eptm.settings["threshold_length"]
-
     (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) = vertices
 
     # eq. 49
@@ -181,10 +179,24 @@ def _set_new_pos_IH(eptm, e_1011, vertices):
     for i, vk, v_0k in zip(range(3), (v7, v8, v9), v_0ns):
         if i == 2:
             # eptm.vert_df.loc[vk, eptm.coords] = r0 + (Dl_th / l_max) * v_0k
-            eptm.vert_df.loc[vk, eptm.coords] = r0
+            # eptm.vert_df.loc[vk, eptm.coords] = r0
+            eptm.vert_df.loc[vk, eptm.coords] = eptm.vert_df.loc[[v3, v6, v10, v11], eptm.coords].mean(axis=0).values
             eptm.vert_df.loc[vk, 'z'] = 0
         else:
-            eptm.vert_df.loc[vk, eptm.coords] = r0 + ((Dl_th*5) / l_max) * v_0k
+            # eptm.vert_df.loc[vk, eptm.coords] = r0 + ((Dl_th) / l_max) * v_0k
+            eptm.vert_df.loc[vk, eptm.coords] = r0 + v_0k
+
+    # # ecarter v3, v6
+    # (cA, cB, cC, cD, cE) = cells
+    # cA_center = eptm.cell_df.loc[cA, eptm.coords].values
+    # v3_z_save = eptm.vert_df.loc[v3, 'z']
+    # eptm.vert_df.loc[v3, eptm.coords] = (eptm.vert_df.loc[v3, eptm.coords].values + (eptm.vert_df.loc[[v3], eptm.coords].values - cA_center[np.newaxis, :]))[0]
+    # eptm.vert_df.loc[v3, 'z'] = v3_z_save
+    #
+    # cB_center = eptm.cell_df.loc[cB, eptm.coords].values
+    # v6_z_save = eptm.vert_df.loc[v6, 'z']
+    # eptm.vert_df.loc[v6, eptm.coords] = (eptm.vert_df.loc[v6, eptm.coords].values + (eptm.vert_df.loc[[v6], eptm.coords].values - cB_center[np.newaxis, :]))[0]
+    # eptm.vert_df.loc[v6, 'z'] = v6_z_save
 
 def _get_vertex_pairs_IH(eptm, e_1011):
 
@@ -471,7 +483,8 @@ def IH_transition(eptm, e_1011):
         #     eptm.edge_df.loc[e_b11s, "segment"] = "lateral"
         #     eptm.edge_df.loc[e_11bs, "segment"] = "lateral"
 
-    _set_new_pos_IH(eptm, e_1011, vertices)
+    cells = (cA, cB, cC, cD, cE)
+    _set_new_pos_IH(eptm, e_1011, vertices, cells)
 
     face = eptm.edge_df.loc[e_1011, "face"]
     new_fs = eptm.face_df.loc[[face, face]].copy()
@@ -479,6 +492,10 @@ def IH_transition(eptm, e_1011):
     fa, fb = eptm.face_df.index[-2:]
     eptm.face_df.loc[fa, 'segment'] = "lateral"
     eptm.face_df.loc[fb, 'segment'] = "lateral"
+    eptm.face_df.loc[fa, 'prefered_perimeter'] = 2.8
+    eptm.face_df.loc[fb, 'prefered_perimeter'] = 2.8
+    eptm.face_df.loc[fa, 'prefered_area'] = 2
+    eptm.face_df.loc[fb, 'prefered_area'] = 2
     edges_fa_fb = eptm.edge_df.loc[[e_1011] * 6].copy()
     eptm.edge_df = eptm.edge_df.append(edges_fa_fb, ignore_index=True)
     new_es = eptm.edge_df.index[-6:]
