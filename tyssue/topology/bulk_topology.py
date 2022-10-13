@@ -534,6 +534,12 @@ def IH_transition(eptm, e_1011):
         for face in fa, fb:
             eptm.guess_face_segment(face)
 
+
+    dx = eptm.vert_df.loc[v8, 'x'] - eptm.vert_df.loc[v7, 'x']
+    dy = eptm.vert_df.loc[v8, 'y'] - eptm.vert_df.loc[v7, 'y']
+    with open("/mnt/sda1/Sophie/0-Simulations/20221010_3D_QS_with_HI/1/0./output_t1_02.txt", 'a') as f:
+        f.write(str(np.arctan2(dy, dx)))
+        f.write("\n")
     eptm.reset_index()
     eptm.reset_topo()
     logger.info(f"IH transition on edge {e_1011}")
