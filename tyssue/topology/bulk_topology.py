@@ -3,7 +3,6 @@ import logging
 import warnings
 from functools import wraps
 
-
 import numpy as np
 import pandas as pd
 
@@ -81,6 +80,7 @@ def close_cell(eptm, cell):
     eptm.reset_topo()
     return 0
 
+
 def find_rearangements(eptm):
     """Finds the candidates for IH and HI transitions
     Returns
@@ -98,7 +98,6 @@ def find_rearangements(eptm):
 
 
 def find_IHs(eptm, shorts=None):
-
     l_th = eptm.settings.get("threshold_length", 1e-3)
     if shorts is None:
         shorts = eptm.edge_df[eptm.edge_df["length"] < l_th]
@@ -135,6 +134,8 @@ def find_HIs(eptm, shorts=None):
     short_faces = eptm.face_df.loc[max_f_length[max_f_length < l_th].index]
     faces_HI = short_faces[short_faces["num_sides"] == 3].sort_values("area").index
     return faces_HI
+
+
 def check_condition4(func):
     @wraps(func)
     def decorated(eptm, *args, **kwargs):
@@ -149,6 +150,7 @@ def check_condition4(func):
         return res
 
     return decorated
+
 
 def _set_new_pos_IH(eptm, e_1011, vertices, cells):
     """Okuda 2013 equations 46 to 56
@@ -198,8 +200,8 @@ def _set_new_pos_IH(eptm, e_1011, vertices, cells):
     # eptm.vert_df.loc[v6, eptm.coords] = (eptm.vert_df.loc[v6, eptm.coords].values + (eptm.vert_df.loc[[v6], eptm.coords].values - cB_center[np.newaxis, :]))[0]
     # eptm.vert_df.loc[v6, 'z'] = v6_z_save
 
-def _get_vertex_pairs_IH(eptm, e_1011):
 
+def _get_vertex_pairs_IH(eptm, e_1011):
     srce_face_orbits = eptm.get_orbits("srce", "face")
     v10, v11 = eptm.edge_df.loc[e_1011, ["srce", "trgt"]]
     common_faces = set(srce_face_orbits.loc[v10]).intersection(
@@ -234,8 +236,9 @@ def _get_vertex_pairs_IH(eptm, e_1011):
         else:
             return None
     return v_pairs
-def _set_new_pos_HI(eptm, fa, v10, v11):
 
+
+def _set_new_pos_HI(eptm, fa, v10, v11):
     r0 = eptm.face_df.loc[fa, eptm.coords].values
 
     norm_a = eptm.edge_df[eptm.edge_df["face"] == fa][eptm.ncoords].mean(axis=0).values
@@ -244,6 +247,8 @@ def _set_new_pos_HI(eptm, fa, v10, v11):
     Dl_th = eptm.settings["threshold_length"] * 1.01
     eptm.vert_df.loc[v10, eptm.coords] = r0 + Dl_th / 2 * norm_b
     eptm.vert_df.loc[v11, eptm.coords] = r0 + Dl_th / 2 * norm_a
+
+
 @check_condition4
 def HI_transition(eptm, face):
     """
@@ -311,22 +316,22 @@ def HI_transition(eptm, face):
     for vi, vj, vk in zip((v1, v2, v3), (v4, v5, v6), (v7, v8, v9)):
         e_iks = eptm.edge_df[
             (eptm.edge_df["srce"] == vi) & (eptm.edge_df["trgt"] == vk)
-        ].index
+            ].index
         eptm.edge_df.loc[e_iks, "trgt"] = v10
 
         e_kis = eptm.edge_df[
             (eptm.edge_df["srce"] == vk) & (eptm.edge_df["trgt"] == vi)
-        ].index
+            ].index
         eptm.edge_df.loc[e_kis, "srce"] = v10
 
         e_jks = eptm.edge_df[
             (eptm.edge_df["srce"] == vj) & (eptm.edge_df["trgt"] == vk)
-        ].index
+            ].index
         eptm.edge_df.loc[e_jks, "trgt"] = v11
 
         e_kjs = eptm.edge_df[
             (eptm.edge_df["srce"] == vk) & (eptm.edge_df["trgt"] == vj)
-        ].index
+            ].index
         eptm.edge_df.loc[e_kjs, "srce"] = v11
 
     # Closing the faces with v10 → v11 edges
@@ -342,7 +347,7 @@ def HI_transition(eptm, face):
         | (eptm.edge_df["trgt"] == v8)
         | (eptm.edge_df["srce"] == v9)
         | (eptm.edge_df["trgt"] == v9)
-    ].index
+        ].index
 
     eptm.edge_df = eptm.edge_df.loc[eptm.edge_df.index.delete(todel_edges)]
     eptm.vert_df = eptm.vert_df.loc[eptm.vert_df.index.delete([v7, v8, v9])]
@@ -355,6 +360,8 @@ def HI_transition(eptm, face):
     eptm.reset_topo()
     logger.info(f"HI transition on edge {face}")
     return 0
+
+
 @check_condition4
 def IH_transition(eptm, e_1011):
     """
@@ -363,7 +370,7 @@ def IH_transition(eptm, e_1011):
     See tyssue/doc/illus/IH_transition.png for the definition of the
     edges, which follow the one in the above article
     """
-
+    position = eptm.edge_df.loc[e_1011, 'segment']
     v10, v11 = eptm.edge_df.loc[e_1011, ["srce", "trgt"]]
     v_pairs = _get_vertex_pairs_IH(eptm, e_1011)
     if v_pairs is None:
@@ -388,11 +395,11 @@ def IH_transition(eptm, e_1011):
         #     e_1011,
         # )
         logger.warning(
-                """
-            Topology cannot be correctly determined around edge %i
-            """,
-                e_1011,
-            )
+            """
+        Topology cannot be correctly determined around edge %i
+        """,
+            e_1011,
+        )
         return -1
 
     new_vs = eptm.vert_df.loc[[v1, v2, v3]].copy()
@@ -420,12 +427,12 @@ def IH_transition(eptm, e_1011):
     if cA is not None:
         # orient vertices 1,2,3 positively
         r_12 = (
-            eptm.vert_df.loc[v2, eptm.coords].values
-            - eptm.vert_df.loc[v1, eptm.coords].values
+                eptm.vert_df.loc[v2, eptm.coords].values
+                - eptm.vert_df.loc[v1, eptm.coords].values
         ).astype(np.float)
         r_23 = (
-            eptm.vert_df.loc[v3, eptm.coords].values
-            - eptm.vert_df.loc[v2, eptm.coords].values
+                eptm.vert_df.loc[v3, eptm.coords].values
+                - eptm.vert_df.loc[v2, eptm.coords].values
         ).astype(np.float)
         r_123 = eptm.vert_df.loc[[v1, v2, v3], eptm.coords].mean(axis=0).values
         r_A = eptm.cell_df.loc[cA, eptm.coords].values
@@ -433,12 +440,12 @@ def IH_transition(eptm, e_1011):
     elif cB is not None:
         # orient vertices 4,5,6 negatively
         r_45 = (
-            eptm.vert_df.loc[v5, eptm.coords].values
-            - eptm.vert_df.loc[v4, eptm.coords].values
+                eptm.vert_df.loc[v5, eptm.coords].values
+                - eptm.vert_df.loc[v4, eptm.coords].values
         ).astype(np.float)
         r_56 = (
-            eptm.vert_df.loc[v6, eptm.coords].values
-            - eptm.vert_df.loc[v5, eptm.coords].values
+                eptm.vert_df.loc[v6, eptm.coords].values
+                - eptm.vert_df.loc[v5, eptm.coords].values
         ).astype(np.float)
         r_456 = eptm.vert_df.loc[[v4, v5, v6], eptm.coords].mean(axis=0).values
         r_B = eptm.cell_df.loc[cB, eptm.coords].values
@@ -460,22 +467,22 @@ def IH_transition(eptm, e_1011):
         # assign v1 -> v10 edges to  v1 -> v7
         e_a10s = eptm.edge_df[
             (eptm.edge_df["srce"] == va) & (eptm.edge_df["trgt"] == v10)
-        ].index
+            ].index
         eptm.edge_df.loc[e_a10s, "trgt"] = new
         # assign v10 -> v1 edges to  v7 -> v1
         e_10as = eptm.edge_df[
             (eptm.edge_df["srce"] == v10) & (eptm.edge_df["trgt"] == va)
-        ].index
+            ].index
         eptm.edge_df.loc[e_10as, "srce"] = new
         # assign v4 -> v11 edges to  v4 -> v7
         e_b11s = eptm.edge_df[
             (eptm.edge_df["srce"] == vb) & (eptm.edge_df["trgt"] == v11)
-        ].index
+            ].index
         eptm.edge_df.loc[e_b11s, "trgt"] = new
         # assign v11 -> v4 edges to  v7 -> v4
         e_11bs = eptm.edge_df[
             (eptm.edge_df["srce"] == v11) & (eptm.edge_df["trgt"] == vb)
-        ].index
+            ].index
         eptm.edge_df.loc[e_11bs, "srce"] = new
         # if i == 2:
         #     eptm.edge_df.loc[e_a10s, "segment"] = "lateral"
@@ -487,6 +494,7 @@ def IH_transition(eptm, e_1011):
     _set_new_pos_IH(eptm, e_1011, vertices, cells)
 
     face = eptm.edge_df.loc[e_1011, "face"]
+    area_ = eptm.face_df.loc[face, 'area']
     new_fs = eptm.face_df.loc[[face, face]].copy()
     eptm.face_df = eptm.face_df.append(new_fs, ignore_index=True)
     fa, fb = eptm.face_df.index[-2:]
@@ -500,8 +508,8 @@ def IH_transition(eptm, e_1011):
     eptm.edge_df = eptm.edge_df.append(edges_fa_fb, ignore_index=True)
     new_es = eptm.edge_df.index[-6:]
     for i, eA, eB, (vi, vj) in zip(range(3),
-        new_es[::2], new_es[1::2], [(v7, v8), (v8, v9), (v9, v7)]
-    ):
+                                   new_es[::2], new_es[1::2], [(v7, v8), (v8, v9), (v9, v7)]
+                                   ):
         # if i == 0:
         eptm.edge_df.loc[eA, ["srce", "trgt", "face", "cell"]] = vi, vj, fa, cA
         eptm.edge_df.loc[eB, ["srce", "trgt", "face", "cell"]] = vj, vi, fb, cB
@@ -520,7 +528,7 @@ def IH_transition(eptm, e_1011):
         | (eptm.edge_df["srce"] == v11)
         | (eptm.edge_df["trgt"] == v11)
         | pd.isna(eptm.edge_df["cell"])
-    ].index
+        ].index
 
     eptm.edge_df = eptm.edge_df.loc[eptm.edge_df.index.delete(todel_edges)]
     eptm.vert_df = eptm.vert_df.loc[set(eptm.edge_df.sort_values("srce")["srce"])]
@@ -534,12 +542,13 @@ def IH_transition(eptm, e_1011):
         for face in fa, fb:
             eptm.guess_face_segment(face)
 
-
     dx = eptm.vert_df.loc[v8, 'x'] - eptm.vert_df.loc[v7, 'x']
     dy = eptm.vert_df.loc[v8, 'y'] - eptm.vert_df.loc[v7, 'y']
-    with open("/mnt/sda1/Sophie/0-Simulations/20221010_3D_QS_with_HI/1/0./output_t1_02.txt", 'a') as f:
-        f.write(str(np.arctan2(dy, dx)))
-        f.write("\n")
+
+    if 'file_text' in eptm.specs['settings']:
+        with open(eptm.specs['settings']['file_text'], 'a') as f:
+            f.write(str(e_1011) + '\t' + position + '\t' + str(area_) + '\t' + str(np.arctan2(dy, dx)))
+            f.write("\n")
     eptm.reset_index()
     eptm.reset_topo()
     logger.info(f"IH transition on edge {e_1011}")
@@ -570,12 +579,9 @@ def split_vert(eptm, vert, face=None, multiplier=1.5, recenter=False):
 
     see ../doc/illus/IH_transition.png
     """
-    print("split vert bulk topology")
     all_edges = eptm.edge_df[
         (eptm.edge_df["trgt"] == vert) | (eptm.edge_df["srce"] == vert)
-    ]
-    print("all edges:")
-    print(all_edges[['srce', 'trgt', 'face', 'segment', 'cell']])
+        ]
     faces = all_edges.groupby("face").apply(
         lambda df: pd.Series(
             {
@@ -585,7 +591,6 @@ def split_vert(eptm, vert, face=None, multiplier=1.5, recenter=False):
             }
         )
     )
-    print(faces)
     cells = all_edges.groupby("cell").apply(
         lambda df: pd.Series(
             {
@@ -595,26 +600,19 @@ def split_vert(eptm, vert, face=None, multiplier=1.5, recenter=False):
             }
         )
     )
-    print(cells)
     # choose a face
     if face is None:
         # faces_ = faces[(faces['segment'] == 'apical') | (faces['segment'] == 'basal')]
         face = np.random.choice(faces.index)
 
     pair = faces[faces["verts"] == faces.loc[face, "verts"]].index
-    print(pair)
     # Take the cell adjacent to the face with the smallest size
     cell = cells.loc[faces.loc[pair, "cell"], "size"].idxmin()
     face = pair[0] if pair[0] in cells.loc[cell, "faces"] else pair[1]
     elements = vert, face, cell
-    print(vert,eptm.vert_df.loc[vert, 'segment'], face, eptm.face_df.loc[face, 'segment'], cell)
-    print(eptm.face_df.loc[face])
-    print(eptm.edge_df[eptm.edge_df['face']==face][['srce', 'trgt']])
-    print("choose transition")
 
     if len(cells.iloc[np.where(cells['size'] == 4)].index) == 0:
         logger.info(f"OI for face {face} of cell {cell}")
-        print("OI_transition")
         _OI_transition(eptm, all_edges, elements, multiplier, recenter=recenter)
     else:
         face = cells.iloc[np.where(cells['size'] == 4)].index[0]
@@ -622,7 +620,6 @@ def split_vert(eptm, vert, face=None, multiplier=1.5, recenter=False):
         # face = pair[0] if pair[0] in cells.loc[cell, "faces"] else pair[1]
         elements = vert, face, cell
         logger.info(f"OI for face {face} of cell {cell}")
-        print("OH_transition")
         _OH_transition(eptm, all_edges, elements, multiplier, recenter=recenter)
 
     # if cells.loc[cell, "size"] == 3:
@@ -637,7 +634,6 @@ def split_vert(eptm, vert, face=None, multiplier=1.5, recenter=False):
     #     logger.info("Nothing happened ")
     #     return 1
 
-
     # Tidy up
     new_edges = []
     for face in all_edges["face"].unique():
@@ -646,14 +642,12 @@ def split_vert(eptm, vert, face=None, multiplier=1.5, recenter=False):
             new_edges.append(new_edge)
     eptm.reset_index()
     eptm.reset_topo()
-    print(new_edges)
 
     # for cell in all_edges["cell"].unique():
     for cell in range(eptm.Nc):
         try:
             close_cell(eptm, cell)
         except ValueError as e:
-            print("close failed for cell")
             logger.error(f"Close failed for cell {cell}")
             raise e
 
@@ -681,40 +675,30 @@ def split_vert(eptm, vert, face=None, multiplier=1.5, recenter=False):
     # eptm.reset_topo()
     # import sys
     # sys.exit()
-    print('END split_vert bulk topology')
     return 0
 
 
 def _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False,
                    cell_A=None, cell_B=None, cell_C=None, cell_D=None):
-    print('inside OI')
     eptm.get_opposite_faces()
     epsilon = eptm.settings.get("threshold_length", 0.1) * multiplier
     vert, face, cell = elements
-    print(vert, face, eptm.face_df.loc[face, 'segment'], cell)
-    print("all_edges")
-    print(all_edges[['srce', 'trgt', 'face', 'segment', 'cell']])
     if ('apical' not in all_edges['segment']) & ('basal' not in all_edges['segment']):
         return
     # Get cell and assign a "function"
     cells = np.unique(all_edges["cell"])
     if cell_A is None:
-        #if more than 2 cells are in the border => abort
+        # if more than 2 cells are in the border => abort
         val, count = np.unique(all_edges['is_border'], return_counts=True)
-        print(val, count)
         if True in val:
-            print("true in count")
-            print(count[np.where(val==True)])
-            if count[np.where(val==True)] >= 10:
+            if count[np.where(val == True)] >= 10:
                 print('abort border')
                 return
     a_or_b_edges = all_edges[(all_edges['segment'] == "apical") |
                              (all_edges['segment'] == "basal")]
 
-    if cell_A is None :
+    if cell_A is None:
         if len(cells) == 4:
-            print("np_cell")
-            print(cells)
 
             cell_C = cell
 
@@ -728,11 +712,9 @@ def _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False,
             cell_B = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &
                                   (a_or_b_edges['trgt'] == srce)]['cell'].to_numpy()[0]
 
-            cell_D = list(set(cells).symmetric_difference(set([cell_A, cell_B, cell_C,])))[0]
+            cell_D = list(set(cells).symmetric_difference(set([cell_A, cell_B, cell_C, ])))[0]
 
         elif len(cells) > 4:
-            print("np_cell")
-            print(cells)
             a_or_b_edges = all_edges[(all_edges['segment'] == "apical") |
                                      (all_edges['segment'] == "basal")]
             cell_C = cell
@@ -740,7 +722,7 @@ def _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False,
             srce = a_or_b_edges[(a_or_b_edges['cell'] == cell_C)].iloc[0]['srce']
             trgt = a_or_b_edges[(a_or_b_edges['cell'] == cell_C)].iloc[0]['trgt']
             cell_A = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &
-                                   (a_or_b_edges['trgt'] == srce)]['cell'].to_numpy()[0]
+                                  (a_or_b_edges['trgt'] == srce)]['cell'].to_numpy()[0]
 
             srce = a_or_b_edges[(a_or_b_edges['cell'] == cell_C)].iloc[1]['srce']
             trgt = a_or_b_edges[(a_or_b_edges['cell'] == cell_C)].iloc[1]['trgt']
@@ -761,25 +743,31 @@ def _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False,
 
         elif len(cells) == 3:
             return
-            print("np_cell")
-            print(cells)
 
             center_cell = cells[0]
-            if len(a_or_b_edges[(a_or_b_edges['cell']==cells[1]) &
-                             ((a_or_b_edges['srce']==a_or_b_edges[a_or_b_edges['cell']==center_cell].iloc[0]['trgt']) &
-                              (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0]['srce'])) |
-                             ((a_or_b_edges['srce'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1]['trgt']) &
-                              (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1]['srce']))
-                             ]) == 1 & len(a_or_b_edges[(a_or_b_edges['cell'] == cells[2]) &
-                                 ((a_or_b_edges['srce'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
-                                     'trgt']) &
-                                  (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
-                                      'srce'])) |
-                                 ((a_or_b_edges['srce'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
-                                     'trgt']) &
-                                  (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
-                                      'srce']))
-                                 ]) == 1 :
+            if len(a_or_b_edges[(a_or_b_edges['cell'] == cells[1]) &
+                                ((a_or_b_edges['srce'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
+                                    'trgt']) &
+                                 (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
+                                     'srce'])) |
+                                ((a_or_b_edges['srce'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
+                                    'trgt']) &
+                                 (a_or_b_edges['trgt'] == a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
+                                     'srce']))
+                   ]) == 1 & len(a_or_b_edges[(a_or_b_edges['cell'] == cells[2]) &
+                                              ((a_or_b_edges['srce'] ==
+                                                a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
+                                                    'trgt']) &
+                                               (a_or_b_edges['trgt'] ==
+                                                a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[0][
+                                                    'srce'])) |
+                                              ((a_or_b_edges['srce'] ==
+                                                a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
+                                                    'trgt']) &
+                                               (a_or_b_edges['trgt'] ==
+                                                a_or_b_edges[a_or_b_edges['cell'] == center_cell].iloc[1][
+                                                    'srce']))
+                                 ]) == 1:
                 cell_C = center_cell
                 cell_A = cells[1]
                 cell_B = cells[2]
@@ -817,13 +805,9 @@ def _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False,
                     cell_B = cells[1]
             cell_D = np.NaN
 
-    print("CELL")
-    print(cell_A, cell_B, cell_C, cell_D)
-
     # Add all edges from cell B
     connected = all_edges[
         all_edges['cell'] == cell_B]
-    print(connected[['srce', 'trgt', 'face', 'segment', 'cell']])
 
     # Add apical or basal edge for cell C
     srce = a_or_b_edges[a_or_b_edges['cell'] == cell_B].iloc[0]['srce']
@@ -831,7 +815,6 @@ def _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False,
     new_edges = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &
                              (a_or_b_edges['trgt'] == srce)]
     connected = pd.concat((connected, new_edges))
-    print(connected[['srce', 'trgt', 'face', 'segment', 'cell']])
 
     # Add apical or basal edge for cell D
     srce = a_or_b_edges[a_or_b_edges['cell'] == cell_B].iloc[1]['srce']
@@ -839,19 +822,13 @@ def _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False,
     new_edges = a_or_b_edges[(a_or_b_edges['srce'] == trgt) &
                              (a_or_b_edges['trgt'] == srce)]
     connected = pd.concat((connected, new_edges))
-    print(connected[['srce', 'trgt', 'face', 'segment', 'cell']])
 
     cell_B_lat_faces = connected[(connected['cell'] == cell_B) &
                                  (connected['segment'] == 'lateral')]['face']
-    print("cell_B_lat_faces")
-    print(cell_B_lat_faces)
     for f in cell_B_lat_faces:
         opp_face = eptm.face_df.loc[f, 'opposite']
         new_edges = all_edges[(all_edges['face'] == opp_face)]
         connected = pd.concat((connected, new_edges))
-        print(connected[['srce', 'trgt', 'face', 'segment', 'cell']])
-
-
 
     # Get all the edges bordering this terahedron
     # cell_eges = eptm.edge_df.query(f"cell == {cell}")
@@ -864,18 +841,16 @@ def _OI_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False,
     #     | all_edges["srce"].isin(next_vs)
     #     | all_edges["trgt"].isin(prev_vs)
     # ]
-    print('connected')
-    print(connected[['srce', 'trgt', 'face', 'segment', 'cell']])
 
     r_ia = eptm.face_df.loc[a_or_b_edges[(a_or_b_edges['cell'] == cell_B) &
-                                         ((a_or_b_edges['segment']=='apical')|
-                                          (a_or_b_edges['segment']=='basal'))]['face'].to_numpy()[0], eptm.coords] - eptm.vert_df.loc[vert, eptm.coords]
+                                         ((a_or_b_edges['segment'] == 'apical') |
+                                          (a_or_b_edges['segment'] == 'basal'))]['face'].to_numpy()[0], eptm.coords] - \
+           eptm.vert_df.loc[vert, eptm.coords]
     shift = r_ia * epsilon / np.linalg.norm(r_ia)
     base_split_vert(eptm, vert, face, connected, epsilon, recenter, shift=shift)
 
 
 def _OH_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False):
-    print('start oh_transition')
     epsilon = eptm.settings.get("threshold_length", 0.1) * multiplier
     vert, face, cell = elements
 
@@ -883,17 +858,11 @@ def _OH_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False):
     cells = np.unique(all_edges["cell"])
     # if more than 2 cells are in the border => abort
     val, count = np.unique(all_edges['is_border'], return_counts=True)
-    print(val, count)
     if True in val:
-        print("true in count")
-        print(count[np.where(val == True)])
         if count[np.where(val == True)] >= 10:
-            print('abort border')
             return
 
     if len(cells) == 4:
-        print("np_cell")
-        print(cells)
         count_segment = all_edges[all_edges['segment'] == 'lateral'].value_counts('cell')
         # Les cellules à 4 cotés sont C et D
         cell_C, cell_D = count_segment[count_segment == 4].index
@@ -901,13 +870,13 @@ def _OH_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False):
         cell_A, cell_B = count_segment[count_segment == 6].index
     else:
         return
-    print("CELL")
-    print(cell_A, cell_B, cell_C, cell_D)
 
     # 1-Create junction AB connected to lateral triangle cell and apical/basal surface
-    cell_A_lateral_face = np.unique(all_edges[(all_edges['cell']==cell_A) & (all_edges['segment']=='lateral') ][['srce', 'trgt', 'face', 'segment', 'cell']]['face'])
-    sides_3_lateral_face = eptm.face_df.loc[cell_A_lateral_face][eptm.face_df.loc[cell_A_lateral_face]['num_sides'] == 3].index[0]
-    connected = all_edges[all_edges['segment']=='lateral']
+    cell_A_lateral_face = np.unique(all_edges[(all_edges['cell'] == cell_A) & (all_edges['segment'] == 'lateral')][
+                                        ['srce', 'trgt', 'face', 'segment', 'cell']]['face'])
+    sides_3_lateral_face = \
+    eptm.face_df.loc[cell_A_lateral_face][eptm.face_df.loc[cell_A_lateral_face]['num_sides'] == 3].index[0]
+    connected = all_edges[all_edges['segment'] == 'lateral']
 
     r_ia = eptm.face_df.loc[sides_3_lateral_face, eptm.coords] - \
            eptm.vert_df.loc[vert, eptm.coords]
@@ -923,14 +892,12 @@ def _OH_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False):
             new_edges.append(new_edge)
     eptm.reset_index()
     eptm.reset_topo()
-    print(new_edges)
 
     # for cell in all_edges["cell"].unique():
     for cell in range(eptm.Nc):
         try:
             close_cell(eptm, cell)
         except ValueError as e:
-            print("close failed for cell")
             logger.error(f"Close failed for cell {cell}")
             raise e
 
@@ -946,23 +913,14 @@ def _OH_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False):
     eptm.reset_index()
     eptm.reset_topo()
 
-    print(sides_3_lateral_face)
-    print(eptm.face_df.loc[sides_3_lateral_face, 'num_sides'])
-    print(eptm.face_df.loc[sides_3_lateral_face, 'opposite'])
-    print(eptm.face_df.loc[eptm.face_df.loc[sides_3_lateral_face, 'opposite'], 'num_sides'])
     # call _OI?
-    print("New_all_edges")
-    print(all_edges.index)
     # all_edges = all_edges.drop(all_edges[all_edges['face'] == sides_3_lateral_face].index)
     # all_edges = all_edges.drop(all_edges[all_edges['face'] == eptm.face_df.loc[sides_3_lateral_face, 'opposite']].index)
 
     all_edges = eptm.edge_df[
         (eptm.edge_df["trgt"] == vert) | (eptm.edge_df["srce"] == vert)
         ]
-    print(all_edges.index)
     _OI_transition(eptm, all_edges, elements, multiplier=5, recenter=False)
-
-
 
     # # all_cell_edges = eptm.edge_df.query(f'cell == {cell}').copy()
     # cell_edges = all_edges.query(f"cell == {cell}").copy()
@@ -991,7 +949,7 @@ def _OH_transition(eptm, all_edges, elements, multiplier=1.5, recenter=False):
 
 
 def get_division_edges(
-    eptm, mother, plane_normal, plane_center=None, return_verts=False
+        eptm, mother, plane_normal, plane_center=None, return_verts=False
 ):
     """Returns an index of the mother cell edges crossed by the division plane, ordered
     clockwize around the division plane normal.
@@ -1043,12 +1001,12 @@ def get_division_edges(
 
 
 def get_division_vertices(
-    eptm,
-    division_edges=None,
-    mother=None,
-    plane_normal=None,
-    plane_center=None,
-    return_all=False,
+        eptm,
+        division_edges=None,
+        mother=None,
+        plane_normal=None,
+        plane_center=None,
+        return_all=False,
 ):
     if division_edges is None:
         division_edges, mother_verts, daughter_verts = get_division_edges(
@@ -1068,7 +1026,7 @@ def get_division_vertices(
 
 # @check_condition4
 def cell_division(
-    eptm, mother, geom, vertices=None, mother_verts=None, daughter_verts=None
+        eptm, mother, geom, vertices=None, mother_verts=None, daughter_verts=None
 ):
     if vertices is None:
         vertices, mother_verts, daughter_verts = get_division_vertices(
@@ -1129,7 +1087,7 @@ identifier. Consider doing this at initialisation time
     # To keep mother orientation, the first septum face
     # belongs to mother
     for v1, v2, edge, oppo in zip(
-        vertices, np.roll(vertices, -1), new_edges[:num_v], new_edges[num_v:]
+            vertices, np.roll(vertices, -1), new_edges[:num_v], new_edges[num_v:]
     ):
         # Mother septum
         eptm.edge_df.loc[edge, ["srce", "trgt", "face", "cell"]] = (
@@ -1150,7 +1108,7 @@ identifier. Consider doing this at initialisation time
         # assign edges linked to daughter verts to daughter
         daughter_faces = eptm.edge_df.loc[
             eptm.edge_df["srce"].isin(daughter_verts) & (eptm.edge_df["cell"] == mother)
-        ]["face"].unique()
+            ]["face"].unique()
 
         eptm.edge_df.loc[eptm.edge_df["face"].isin(daughter_faces), "cell"] = daughter
         eptm.edge_df.loc[eptm.edge_df["face"] == septum[1], "cell"] = daughter
@@ -1210,7 +1168,6 @@ def find_rearangements(eptm):
 
 
 def find_IHs(eptm, shorts=None):
-
     l_th = eptm.settings.get("threshold_length", 1e-2)
     if shorts is None:
         shorts = eptm.edge_df[eptm.edge_df["length"] < l_th]
@@ -1313,7 +1270,7 @@ def fix_pinch(eptm):
     logger.info("Fixing pinch for cells %s", bad_cells)
     to_remove = eptm.edge_df.loc[
         eptm.edge_df["face"].isin(faces) & (eptm.edge_df["cell"].isin(bad_cells))
-    ]
+        ]
 
     bad_faces = to_remove["face"].unique()
     bad_edges = to_remove.index.values
@@ -1322,4 +1279,3 @@ def fix_pinch(eptm):
     eptm.face_df = eptm.face_df.drop(bad_faces)
     eptm.reset_index()
     eptm.reset_topo()
-

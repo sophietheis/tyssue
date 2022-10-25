@@ -32,14 +32,11 @@ def split_vert(sheet, vert, face, to_rewire, epsilon, recenter=False, shift=None
 
     """
     logger.debug("splitting vertex %d", vert)
-    print("split vertex")
-    print(vert, face)
     # Add a vertex
     this_vert = sheet.vert_df.loc[vert:vert]  # avoid type munching
     sheet.vert_df = pd.concat([sheet.vert_df, this_vert], ignore_index=True) #créer un nouveau vertex à la fin de vert_df
     # sheet.vert_df = sheet.vert_df.append(this_vert, ignore_index=True)
     new_vert = sheet.vert_df.index[-1] # récupère l'indice du nouveau vertex créer
-    print(new_vert)
     # Move it towards the face center
     if shift is None:
         r_ia = sheet.face_df.loc[face, sheet.coords] - sheet.vert_df.loc[vert, sheet.coords]
@@ -51,13 +48,10 @@ def split_vert(sheet, vert, face, to_rewire, epsilon, recenter=False, shift=None
 
     else:
         sheet.vert_df.loc[new_vert, sheet.coords] += shift
-    print(sheet.edge_df.loc[to_rewire.index])
     # rewire
     sheet.edge_df.loc[to_rewire.index] = to_rewire.replace(
         {"srce": vert, "trgt": vert}, new_vert
     )
-    print(sheet.edge_df.loc[to_rewire.index])
-    print("END split vertex")
 
 
 def add_vert(eptm, edge):
@@ -181,15 +175,8 @@ def drop_two_sided_faces(eptm):
         return
 
     two_sided = eptm.face_df[num_sides < 3].index
-    print("two_sided")
-    print(two_sided)
     logger.debug("dropping %d 2-sided faces", two_sided.size)
     edges = eptm.edge_df[eptm.edge_df["face"].isin(two_sided)].index
-    if 'segment' in eptm.edge_df:
-        print(eptm.edge_df.loc[edges, ['srce', 'trgt', 'face', 'segment', 'cell', 'opposite']])
-    else:
-        print(eptm.edge_df.loc[edges, ['srce', 'trgt', 'face']])
-    print(edges)
     eptm.edge_df.drop(edges, axis=0, inplace=True)
     eptm.face_df.drop(two_sided, axis=0, inplace=True)
 
@@ -244,7 +231,6 @@ def collapse_edge(sheet, edge, reindex=True, allow_two_sided=False):
 
     """
     sheet_save = sheet.copy(deep_copy=True)
-    print("collapse_ edge_ base topology")
     logger.debug("collapsing edge %d", edge)
     srce, trgt = np.sort(sheet.edge_df.loc[edge, ["srce", "trgt"]]).astype(int)
 
@@ -270,14 +256,8 @@ def collapse_edge(sheet, edge, reindex=True, allow_two_sided=False):
     sheet.edge_df.replace({"srce": trgt, "trgt": trgt}, srce, inplace=True)
     # all the edges parallel to the original
     collapsed = sheet.edge_df.query("srce == trgt")
-    print("collapsed")
-    if 'segment' in sheet.edge_df:
-        print(collapsed[['srce', 'trgt', 'face', 'segment', 'cell']])
-    else:
-        print(collapsed[['srce', 'trgt', 'face']])
     sheet.edge_df.drop(collapsed.index, axis=0, inplace=True)
     if not allow_two_sided:
-        print('dropped_two_faces')
         logger.debug("dropped two sided cells")
         drop_two_sided_faces(sheet)
 

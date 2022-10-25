@@ -36,10 +36,7 @@ def merge_vertices(sheet):
         return -1
     logger.info(f"Collapsing {short.shape[0]} edges")
     while short.shape[0]:
-        if 'cell' in sheet.edge_df.columns:
-            print(short[0], sheet.edge_df.loc[short[0], 'cell'])
         collapse_edge(sheet, short[0], allow_two_sided=False)
-        print('merge_vertices')
         short = sheet.edge_df[sheet.edge_df["length"] < d_min].index.to_numpy()
         np.random.shuffle(short)
     return 0
@@ -84,7 +81,6 @@ def detach_vertices(sheet):
     if to_detach.size:
         logger.info(f"Detaching {to_detach.size} vertices")
         for vert in to_detach:
-            print('split_vertices')
             if 'multiplier' not in sheet.settings:
                 split_vert(sheet, vert)
             else:

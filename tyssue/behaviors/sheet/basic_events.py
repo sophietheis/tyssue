@@ -84,7 +84,6 @@ def reconnect_3D(sheet, manager, **kwargs):
     twist_face, twist_edge = find_twist_faces(sheet)
     cpt = 0
     while (len(twist_face) >= 2) and (cpt < MAX_ITER):
-        print("twist_face")
         cpt+=1
         e = random.randint(0, len(twist_edge)-1)
         retcode = IH_transition(sheet, twist_edge[e])
@@ -105,14 +104,14 @@ def reconnect_3D(sheet, manager, **kwargs):
             break
         edges, faces = find_rearangements(sheet)
 
-    edges, faces = find_rearangements(sheet)
-    cpt = 0
-    while (len(faces) > 1) and (cpt < MAX_ITER):
-        cpt += 1
-        retcode = HI_transition(sheet, np.random.choice(faces))
-        if not retcode:
-            break
-        edges, faces = find_rearangements(sheet)
+    # edges, faces = find_rearangements(sheet)
+    # cpt = 0
+    # while (len(faces) > 1) and (cpt < MAX_ITER):
+    #     cpt += 1
+    #     retcode = HI_transition(sheet, np.random.choice(faces))
+    #     if not retcode:
+    #         break
+    #     edges, faces = find_rearangements(sheet)
 
 
 
